@@ -169,7 +169,7 @@
   .insight{border-radius:14px}.rep-day{border-radius:14px;background:#fbfaf7;border:1px dashed #d8d0c3;box-shadow:none}.rep-item{border-radius:999px}
   .clip-label{font-size:9px;font-weight:750;letter-spacing:.08em;text-transform:uppercase;fill:#43089f}
   html,body{width:100%;max-width:100%;overflow-x:clip}.grid,.card,.chartbox,.chartjs-box{min-width:0}
-  .chartjs-box{position:relative;width:100%;min-height:230px;overflow:visible}.chartjs-box canvas{display:block!important;width:100%!important;height:100%!important;max-width:100%}
+  .chartjs-box{position:relative;width:100%;min-height:230px;overflow:visible}.chart-stage{position:relative;width:100%;height:100%}.chartjs-box canvas{display:block!important;width:100%!important;height:100%!important;max-width:100%}
   .chart-powered{display:inline-flex;align-items:center;gap:5px;margin-left:8px;padding:2px 7px;border-radius:999px;background:#f1edff;color:#5925dc;font-size:8.5px;font-weight:750;letter-spacing:.04em;vertical-align:middle}
   .chart-powered::before{content:'';width:5px;height:5px;border-radius:50%;background:#6246ea;box-shadow:0 0 0 3px rgba(98,70,234,.12)}
   .icd-zone{margin:14px 0;padding:12px;border:1px solid #cfdcf8;border-radius:24px;background:linear-gradient(145deg,#edf4ff 0%,#f7f3ff 48%,#ecfbf4 100%);box-shadow:0 6px 0 #dbe5f6}
@@ -191,6 +191,7 @@
     .filterbar{padding:9px 8px;gap:7px;border-radius:14px}.filterbar .controls{width:100%}.filter-label{flex:0 0 auto}.light-badge{align-self:flex-start}.pill,.chip{padding:7px 11px}
     .kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.kpi{min-height:102px;padding:11px;border-radius:15px}.kpi .v{font-size:25px}.kpi .l{font-size:10px}.kpi-top{margin-bottom:7px}
     .card{padding:12px 10px;border-radius:16px;margin-bottom:10px}.card h2{font-size:12px;min-height:0;margin-bottom:9px;padding-bottom:9px;flex-wrap:wrap}.card h2::after{display:none}.chart-powered{margin-left:0;font-size:8px}
+    .chartjs-box.chart-horizontal{overflow-x:auto;overscroll-behavior-inline:contain;padding-bottom:6px;-webkit-overflow-scrolling:touch}.chartjs-box.chart-horizontal .chart-stage{width:640px;min-width:640px}
     .legend{font-size:9.5px;gap:7px 10px;margin-top:8px;padding-top:8px}.legend span{white-space:normal}.insight{font-size:11px;padding:9px 10px}.rep-day{padding:10px}.rep-sec{align-items:flex-start}.rep-item{white-space:normal;line-height:1.45}
     .search{width:100%;min-width:0;height:44px;font-size:16px}.scroll{border-radius:10px}.dsumwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}.dsumwrap table{min-width:620px}
     .icd-zone{margin:10px 0;padding:7px;border-radius:18px;box-shadow:0 4px 0 #dbe5f6}.icd-hero{padding:12px 10px 8px;gap:10px}.icd-hero h2{font-size:18px}.icd-hero p{font-size:10px}.icd-mark{width:56px;height:56px;border-radius:17px;font-size:15px;box-shadow:4px 4px 0 #98d9c2}.icd-kpis{gap:7px}.icd-kpi{min-height:82px;padding:10px;border-radius:14px}.icd-kpi .val{font-size:22px}.icd-kpi .lab{font-size:8px}.icd-kpi small{font-size:8.5px}.source-note{font-size:9px;line-height:1.45}.icd-unit-card td:nth-child(1){min-width:190px}.icd-unit-card td:nth-child(5){min-width:330px}.prov-zone{padding:11px;border-radius:17px}.prov-head{flex-direction:column;gap:7px}.prov-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.prov-kpi{min-height:82px;padding:10px}.prov-kpi .val{font-size:21px}
@@ -524,8 +525,9 @@ function chartScales(horizontal=false){
 function mountChart(el,config,height=250){
   const p=viewportProfile();
   if(CHARTS[el.id]){CHARTS[el.id].destroy();delete CHARTS[el.id];}
-  el.classList.add('chartjs-box');el.style.height=height+'px';
-  el.innerHTML='<canvas role="img" aria-label="กราฟข้อมูล '+el.id+'"></canvas>';
+  const horizontal=config.options&&config.options.indexAxis==='y';
+  el.classList.add('chartjs-box');el.classList.toggle('chart-horizontal',horizontal);el.style.height=height+'px';
+  el.innerHTML='<div class="chart-stage"><canvas role="img" aria-label="กราฟข้อมูล '+el.id+'"></canvas></div>';
   const base={responsive:true,maintainAspectRatio:false,animation:reduceMotion?false:{duration:650,easing:'easeOutQuart'},interaction:{mode:'index',intersect:false},layout:{padding:{top:p.phone?14:18,right:p.phone?5:10,left:p.phone?0:4,bottom:2}},plugins:{legend:{display:false},tooltip:chartTooltip(),datalabels:{display:false}}};
   config.options={...base,...(config.options||{}),plugins:{...base.plugins,...((config.options&&config.options.plugins)||{})}};
   CHARTS[el.id]=new Chart(el.querySelector('canvas'),config);
