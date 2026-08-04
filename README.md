@@ -4,12 +4,19 @@ Interactive dashboard สำหรับวิเคราะห์ข้อม�
 
 ![Dashboard preview](screenshots/dashboard.png)
 
+### ICD-10 analytics
+
+![ICD-10 dashboard](screenshots/icd10-section.png)
+
 ## Features
 
 - กรองข้อมูลตามอำเภอและวัน
 - ค้นหาและเรียงลำดับหน่วยบริการ
 - Trend, net change, stacked district, Pareto Top 8 และ horizontal ranking
 - Encounters เทียบ Answered พร้อม response rate
+- สรุป ICD-10 จากทุกหน่วย: Top 10, หมวดโรค, ตารางรายหน่วย และบทวิเคราะห์
+- กรองข้อมูล ICD-10 ตามอำเภอร่วมกับ Dashboard หลัก
+- แสดงขอบเขตข้อมูลและจำนวนรหัสที่ภาพต้นทางซ่อนไว้อย่างชัดเจน
 - Tooltip, data labels, responsive canvas และ reduced-motion support
 - รายงานหน่วยเพิ่มขึ้น ใหม่ และลดลงรายวัน
 - จับคู่หน่วยบริการด้วย `hospital_code`
@@ -22,10 +29,13 @@ Interactive dashboard สำหรับวิเคราะห์ข้อม�
 .
 ├── index.html                         # Dashboard ที่ build แล้ว
 ├── analyze_daily_interactive.py      # ตัวสร้าง Dashboard
+├── icd10_summary.json                # ICD-10 ที่ถอดและตรวจจากภาพ 14 หน่วย
 ├── vendor/
 │   ├── chart.umd.min.js
 │   └── chartjs-plugin-datalabels.min.js
-└── screenshots/dashboard.png
+└── screenshots/
+    ├── dashboard.png
+    └── icd10-section.png
 ```
 
 > CSV ต้นฉบับไม่ถูก commit เพื่อป้องกันการเผยแพร่ข้อมูลที่ไม่จำเป็น
@@ -62,6 +72,12 @@ masks,encounters,answered,citizens,matched,unmatched,match_rate_pct
 ```
 
 ฟิลด์ `encounters` และ `answered` รองรับกรณีไฟล์รุ่นเก่าไม่มีค่า โดยระบบจะใช้ `0`
+
+## ICD-10 data scope
+
+`icd10_summary.json` เก็บรหัส ICD-10 ที่มองเห็นจากภาพสรุปรายหน่วย ณ วันที่ 2026-08-04 เท่านั้น ข้อมูลบางภาพระบุว่ามีรหัสเพิ่มเติมแต่ไม่แสดงรายละเอียด ระบบจึงบันทึกจำนวนไว้ใน `hidden_code_count` และไม่นำรหัสที่ไม่เห็นมาคาดเดาหรือรวมในการคำนวณ
+
+จำนวน diagnosis อาจมากกว่าจำนวน encounter เพราะหนึ่ง encounter สามารถมีได้หลาย diagnosis ตัวเลขใน Dashboard จึงไม่ควรถูกตีความเป็น prevalence หรือจำนวนผู้ป่วยไม่ซ้ำโดยตรง
 
 ## Preview locally
 

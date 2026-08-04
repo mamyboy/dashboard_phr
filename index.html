@@ -171,7 +171,12 @@
   .chartjs-box{position:relative;width:100%;min-height:230px}.chartjs-box canvas{display:block!important;width:100%!important;height:100%!important}
   .chart-powered{display:inline-flex;align-items:center;gap:5px;margin-left:8px;padding:2px 7px;border-radius:999px;background:#f1edff;color:#5925dc;font-size:8.5px;font-weight:750;letter-spacing:.04em;vertical-align:middle}
   .chart-powered::before{content:'';width:5px;height:5px;border-radius:50%;background:#6246ea;box-shadow:0 0 0 3px rgba(98,70,234,.12)}
-  @media(max-width:900px){.hero-art{width:250px;min-width:230px}.hero{padding:22px}.kpis{grid-template-columns:repeat(3,1fr)}}
+  .icd-zone{margin:14px 0;padding:12px;border:1px solid #cfdcf8;border-radius:24px;background:linear-gradient(145deg,#edf4ff 0%,#f7f3ff 48%,#ecfbf4 100%);box-shadow:0 6px 0 #dbe5f6}
+  .icd-zone .card{margin:12px 0;background:rgba(255,255,255,.92)}
+  .icd-hero{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:16px 18px 10px}.icd-hero h2{margin:3px 0 2px;font-size:21px}.icd-hero p{margin:0;color:#67627a;font-size:11px}.icd-mark{display:grid;place-items:center;width:72px;height:72px;border-radius:22px;background:#171720;color:#fff;font-size:19px;font-weight:850;letter-spacing:-.04em;transform:rotate(3deg);box-shadow:6px 6px 0 #98d9c2}.icd-mark span{color:#b8a5ff}
+  .icd-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:2px 0 12px}.icd-kpi{min-height:94px;padding:12px 14px;border:1px solid rgba(80,73,112,.14);border-radius:17px;background:#fff;box-shadow:0 3px 0 rgba(80,73,112,.10)}.icd-kpi:nth-child(1){background:#e5dcff}.icd-kpi:nth-child(2){background:#dff2ff}.icd-kpi:nth-child(3){background:#dcf7e8}.icd-kpi:nth-child(4){background:#fff0c8}.icd-kpi .lab{font-size:9px;font-weight:800;letter-spacing:.08em;color:#615d70;text-transform:uppercase}.icd-kpi .val{display:block;margin:5px 0 1px;font-size:25px;font-weight:850;color:#171720}.icd-kpi small{font-size:9px;color:#67627a}
+  .icd-code{display:inline-flex;align-items:center;gap:4px;margin:2px 4px 2px 0;padding:4px 7px;border-radius:8px;background:#f1edff;color:#4d2cc4;font-size:9.5px;font-weight:800;white-space:nowrap}.icd-code b{color:#171720}.source-note{margin:0 0 10px;padding:9px 11px;border:1px dashed #d5a413;border-radius:12px;background:#fff9df;color:#795c00;font-size:10px}.icd-unit-card table{min-width:900px}.icd-unit-card td{vertical-align:top}.icd-unit-card td:nth-child(1){min-width:230px;font-weight:700}.icd-unit-card td:nth-child(5){min-width:370px}.icd-mini{display:block;margin:1px 0;color:#615d70;font-size:9.5px}.icd-charts{align-items:start}
+  @media(max-width:900px){.hero-art{width:250px;min-width:230px}.hero{padding:22px}.kpis{grid-template-columns:repeat(3,1fr)}.icd-kpis{grid-template-columns:repeat(2,1fr)}}
   @media(max-width:680px){.hero{min-height:auto;align-items:flex-start}.hero-art{width:100%;min-width:0;height:130px}.hero-art svg{height:135px}h1{font-size:25px}.kpis{grid-template-columns:repeat(2,1fr)}}
 </style></head>
 <body>
@@ -270,6 +275,37 @@
   <div class="insight a" id="ansInsight"></div>
 </div>
 
+<section class="icd-zone">
+  <div class="icd-hero">
+    <div>
+      <div class="eyebrow">Clinical coding lens · 14 หน่วยบริการ</div>
+      <h2>🧬 ภาพรวม ICD-10 ที่พบ</h2>
+      <p>สรุปรหัสวินิจฉัยที่มองเห็นจากภาพรายหน่วย พร้อมโครงสร้างกลุ่มโรคและจุดเฝ้าระวัง</p>
+    </div>
+    <div class="icd-mark" aria-hidden="true">ICD<span>10</span></div>
+  </div>
+  <div class="icd-kpis" id="icdKpis"></div>
+  <div class="grid row icd-charts">
+    <div class="card">
+      <h2 class="p">🏷️ รหัสที่พบบ่อย Top 10 <span class="chart-powered">Chart.js</span></h2>
+      <div class="chartbox" id="icdTopChart"></div>
+    </div>
+    <div class="card">
+      <h2 class="g">🧩 สัดส่วนตามหมวด ICD-10 <span class="chart-powered">Chart.js</span></h2>
+      <div class="chartbox" id="icdChapterChart"></div>
+    </div>
+  </div>
+  <div class="card icd-unit-card">
+    <h2>🏥 ICD-10 รายหน่วยบริการ</h2>
+    <div class="source-note" id="icdSourceNote"></div>
+    <div class="scroll"><table id="icdTable"><thead><tr><th>หน่วยบริการ</th><th>อำเภอ</th><th>รหัสที่พบ</th><th>รายการ</th><th>รายละเอียดรหัส</th></tr></thead><tbody></tbody></table></div>
+  </div>
+  <div class="card">
+    <h2 class="am">🔎 บทวิเคราะห์ ICD-10</h2>
+    <div id="icdInsights"></div>
+  </div>
+</section>
+
 <div class="card">
   <h2 class="g">🗂️ มิติอำเภอ — สรุปรวม Masks รายอำเภอ</h2>
   <div id="distSum"></div>
@@ -332,6 +368,7 @@
 </script>
 <script>
 const DATA = {"labels": ["31/7/2026", "1/8/2026", "2/8/2026", "3/8/2026"], "districts": ["ควนกาหลง", "ควนโดน", "ทุ่งหว้า", "ละงู", "เมืองสตูล"], "units": [{"code": "77707", "name": "ศูนย์สุขภาพชุมชนกำแพง", "dist": "ละงู", "masks": [47, 47, 52, 46], "cit": [9, 9, 11, 10], "enc": [0, 0, 0, 46], "ans": [0, 0, 0, 0], "last": 46}, {"code": "24672", "name": "ศูนย์สุขภาพชุมชนศรีพิมาน", "dist": "เมืองสตูล", "masks": [19, 19, 19, 17], "cit": [9, 9, 9, 8], "enc": [0, 0, 0, 17], "ans": [0, 0, 0, 0], "last": 17}, {"code": "11403", "name": "โรงพยาบาลควนกาหลง", "dist": "ควนกาหลง", "masks": [11, 11, 11, 11], "cit": [3, 3, 3, 3], "enc": [0, 0, 0, 11], "ans": [0, 0, 0, 0], "last": 11}, {"code": "10746", "name": "โรงพยาบาลสตูล", "dist": "เมืองสตูล", "masks": [12, 12, 12, 10], "cit": [11, 11, 11, 10], "enc": [0, 0, 0, 10], "ans": [0, 0, 0, 1], "last": 10}, {"code": "09636", "name": "โรงพยาบาลส่งเสริมสุขภาพตำบลบ้านในเมือง ตำบลละงู", "dist": "ละงู", "masks": [6, 6, 6, 8], "cit": [3, 3, 3, 4], "enc": [0, 0, 0, 8], "ans": [0, 0, 0, 0], "last": 8}, {"code": "09641", "name": "โรงพยาบาลส่งเสริมสุขภาพตำบลน้ำผุด", "dist": "ละงู", "masks": [7, 7, 7, 7], "cit": [2, 2, 2, 2], "enc": [0, 0, 0, 7], "ans": [0, 0, 0, 7], "last": 7}, {"code": "11402", "name": "โรงพยาบาลควนโดน", "dist": "ควนโดน", "masks": [3, 4, 4, 5], "cit": [1, 2, 2, 3], "enc": [0, 0, 0, 5], "ans": [0, 0, 0, 5], "last": 5}, {"code": "09604", "name": "โรงพยาบาลส่งเสริมสุขภาพตำบลคลองขุด", "dist": "เมืองสตูล", "masks": [3, 3, 3, 3], "cit": [3, 3, 3, 3], "enc": [0, 0, 0, 3], "ans": [0, 0, 0, 0], "last": 3}, {"code": "09635", "name": "โรงพยาบาลส่งเสริมสุขภาพตำบลบ้านห้วยไทร ตำบลละงู", "dist": "ละงู", "masks": [3, 3, 3, 3], "cit": [2, 2, 2, 2], "enc": [0, 0, 0, 3], "ans": [0, 0, 0, 0], "last": 3}, {"code": "11406", "name": "โรงพยาบาลทุ่งหว้า", "dist": "ทุ่งหว้า", "masks": [3, 3, 3, 3], "cit": [3, 3, 3, 3], "enc": [0, 0, 0, 3], "ans": [0, 0, 0, 3], "last": 3}, {"code": "77708", "name": "ศูนย์สุขภาพชุมชนพิมาน", "dist": "เมืองสตูล", "masks": [1, 1, 1, 2], "cit": [1, 1, 1, 2], "enc": [0, 0, 0, 2], "ans": [0, 0, 0, 0], "last": 2}, {"code": "77654", "name": "โรงพยาบาลส่งเสริมสุขภาพตำบลคลองขุด (สาขา)", "dist": "เมืองสตูล", "masks": [1, 1, 1, 1], "cit": [1, 1, 1, 1], "enc": [0, 0, 0, 1], "ans": [0, 0, 0, 0], "last": 1}, {"code": "09621", "name": "โรงพยาบาลส่งเสริมสุขภาพตำบลควนโดน", "dist": "ควนโดน", "masks": [0, 1, 1, 1], "cit": [0, 1, 1, 1], "enc": [0, 0, 0, 1], "ans": [0, 0, 0, 1], "last": 1}, {"code": "09616", "name": "โรงพยาบาลส่งเสริมสุขภาพตำบลตำมะลัง", "dist": "เมืองสตูล", "masks": [0, 0, 0, 1], "cit": [0, 0, 0, 1], "enc": [0, 0, 0, 1], "ans": [0, 0, 0, 0], "last": 1}], "distDay": {"31/7/2026": {"ควนกาหลง": 11, "ควนโดน": 3, "ทุ่งหว้า": 3, "ละงู": 63, "เมืองสตูล": 36}, "1/8/2026": {"ควนกาหลง": 11, "ควนโดน": 5, "ทุ่งหว้า": 3, "ละงู": 63, "เมืองสตูล": 36}, "2/8/2026": {"ควนกาหลง": 11, "ควนโดน": 5, "ทุ่งหว้า": 3, "ละงู": 68, "เมืองสตูล": 36}, "3/8/2026": {"ควนกาหลง": 11, "ควนโดน": 6, "ทุ่งหว้า": 3, "ละงู": 64, "เมืองสตูล": 34}}, "totMasks": [116, 118, 123, 118], "totCit": [48, 50, 52, 53], "totEnc": [0, 0, 0, 118], "totAns": [0, 0, 0, 17], "nUnitsAll": 14};
+const ICD10 = {"snapshot_date": "2026-08-04", "source_note": "ถอดจากภาพสรุป 14 หน่วยบริการ รายการ diagnosis เป็นเฉพาะรหัสที่มองเห็นในภาพ", "units": [{"code": "77707", "name": "ศูนย์สุขภาพชุมชนกำแพง", "district": "ละงู", "reports": 46, "encounters": 46, "patients": 10, "hidden_code_count": 2, "diagnoses": [{"code": "Z718", "count": 23, "label": "การให้คำปรึกษาอื่นที่ระบุไว้"}, {"code": "Z133", "count": 16, "label": "คัดกรองความผิดปกติทางจิตและพฤติกรรม"}, {"code": "Z123", "count": 11, "label": "คัดกรองมะเร็งเต้านม"}, {"code": "Z001", "count": 10, "label": "ตรวจสุขภาพเด็กตามปกติ"}]}, {"code": "24672", "name": "ศูนย์สุขภาพชุมชนศรีพิมาน", "district": "เมืองสตูล", "reports": 17, "encounters": 17, "patients": 8, "hidden_code_count": 0, "diagnoses": [{"code": "Z123", "count": 16, "label": "คัดกรองมะเร็งเต้านม"}, {"code": "Z133", "count": 2, "label": "คัดกรองความผิดปกติทางจิตและพฤติกรรม"}]}, {"code": "11403", "name": "โรงพยาบาลควนกาหลง", "district": "ควนกาหลง", "reports": 11, "encounters": 11, "patients": 3, "hidden_code_count": 1, "diagnoses": [{"code": "Z123", "count": 5, "label": "คัดกรองมะเร็งเต้านม"}, {"code": "Z133", "count": 2, "label": "คัดกรองความผิดปกติทางจิตและพฤติกรรม"}, {"code": "Z714", "count": 2, "label": "ให้คำปรึกษาเกี่ยวกับการใช้แอลกอฮอล์"}, {"code": "Z716", "count": 2, "label": "ให้คำปรึกษาเกี่ยวกับการใช้ยาสูบ"}]}, {"code": "10746", "name": "โรงพยาบาลสตูล", "district": "เมืองสตูล", "reports": 10, "encounters": 10, "patients": 10, "hidden_code_count": 0, "diagnoses": [{"code": "Z012", "count": 3, "label": "การตรวจทางนรีเวชตามปกติ"}, {"code": "F329", "count": 1, "label": "ภาวะซึมเศร้า ไม่ระบุรายละเอียด"}, {"code": "J019", "count": 1, "label": "ไซนัสอักเสบเฉียบพลัน ไม่ระบุรายละเอียด"}, {"code": "K020", "count": 1, "label": "ฟันผุจำกัดอยู่ในชั้นเคลือบฟัน"}]}, {"code": "09636", "name": "โรงพยาบาลส่งเสริมสุขภาพตำบลบ้านในเมือง ตำบลละงู", "district": "ละงู", "reports": 8, "encounters": 8, "patients": 4, "hidden_code_count": 0, "diagnoses": [{"code": "Z138", "count": 5, "label": "คัดกรองโรคและความผิดปกติอื่นที่ระบุไว้"}, {"code": "Z718", "count": 4, "label": "การให้คำปรึกษาอื่นที่ระบุไว้"}, {"code": "Z133", "count": 3, "label": "คัดกรองความผิดปกติทางจิตและพฤติกรรม"}, {"code": "Z123", "count": 2, "label": "คัดกรองมะเร็งเต้านม"}]}, {"code": "09641", "name": "โรงพยาบาลส่งเสริมสุขภาพตำบลน้ำผุด", "district": "ละงู", "reports": 7, "encounters": 7, "patients": 2, "hidden_code_count": 0, "diagnoses": [{"code": "Z123", "count": 4, "label": "คัดกรองมะเร็งเต้านม"}, {"code": "Z108", "count": 3, "label": "ตรวจสุขภาพทั่วไปในประชากรกลุ่มอื่น"}, {"code": "K045", "count": 1, "label": "โรคของเนื้อเยื่อในฟันและรอบปลายรากฟัน"}, {"code": "M6268", "count": 1, "label": "ความผิดปกติของกล้ามเนื้อ ตำแหน่งอื่น"}]}, {"code": "11402", "name": "โรงพยาบาลควนโดน", "district": "ควนโดน", "reports": 5, "encounters": 5, "patients": 3, "hidden_code_count": 0, "diagnoses": [{"code": "E789", "count": 1, "label": "ความผิดปกติของเมแทบอลิซึมไลโปโปรตีน ไม่ระบุ"}, {"code": "G439", "count": 1, "label": "ไมเกรน ไม่ระบุรายละเอียด"}]}, {"code": "09604", "name": "โรงพยาบาลส่งเสริมสุขภาพตำบลคลองขุด", "district": "เมืองสตูล", "reports": 3, "encounters": 3, "patients": 3, "hidden_code_count": 0, "diagnoses": [{"code": "Z123", "count": 3, "label": "คัดกรองมะเร็งเต้านม"}]}, {"code": "09635", "name": "โรงพยาบาลส่งเสริมสุขภาพตำบลบ้านหัวทราย ตำบลละงู", "district": "ละงู", "reports": 3, "encounters": 3, "patients": 2, "hidden_code_count": 0, "diagnoses": [{"code": "Z718", "count": 3, "label": "การให้คำปรึกษาอื่นที่ระบุไว้"}, {"code": "Z099", "count": 1, "label": "ตรวจติดตามหลังการรักษาภาวะอื่น"}, {"code": "Z133", "count": 1, "label": "คัดกรองความผิดปกติทางจิตและพฤติกรรม"}]}, {"code": "11406", "name": "โรงพยาบาลทุ่งหว้า", "district": "ทุ่งหว้า", "reports": 3, "encounters": 3, "patients": 3, "hidden_code_count": 0, "diagnoses": [{"code": "M170", "count": 1, "label": "ข้อเข่าเสื่อมปฐมภูมิ"}, {"code": "S434", "count": 1, "label": "ข้อเคลื่อน เคล็ด และตึงบริเวณข้อไหล่"}, {"code": "X5099", "count": 1, "label": "ออกแรงมากหรือเคลื่อนไหวซ้ำ"}, {"code": "Z099", "count": 1, "label": "ตรวจติดตามหลังการรักษาภาวะอื่น"}]}, {"code": "77708", "name": "ศูนย์สุขภาพชุมชนพิมาน", "district": "เมืองสตูล", "reports": 2, "encounters": 2, "patients": 2, "hidden_code_count": 0, "diagnoses": [{"code": "U778", "count": 2, "label": "การส่งเสริมสุขภาพและการป้องกันโรค"}, {"code": "U643", "count": 1, "label": "โรคและอาการของทางเดินหายใจ"}, {"code": "U6680", "count": 1, "label": "โรคและอาการอื่น"}]}, {"code": "09616", "name": "โรงพยาบาลส่งเสริมสุขภาพตำบลตำมะลัง", "district": "เมืองสตูล", "reports": 1, "encounters": 1, "patients": 1, "hidden_code_count": 0, "diagnoses": [{"code": "Z131", "count": 1, "label": "คัดกรองเบาหวาน"}, {"code": "Z133", "count": 1, "label": "คัดกรองความผิดปกติทางจิตและพฤติกรรม"}, {"code": "Z136", "count": 1, "label": "คัดกรองโรคหัวใจและหลอดเลือด"}]}, {"code": "09621", "name": "โรงพยาบาลส่งเสริมสุขภาพตำบลควนโดน", "district": "ควนโดน", "reports": 1, "encounters": 1, "patients": 1, "hidden_code_count": 0, "diagnoses": [{"code": "L239", "count": 1, "label": "ผิวหนังอักเสบจากการสัมผัสแบบแพ้ ไม่ระบุสาเหตุ"}, {"code": "M7910", "count": 1, "label": "ปวดกล้ามเนื้อหลายตำแหน่ง"}, {"code": "R05", "count": 1, "label": "ไอ"}]}, {"code": "77654", "name": "โรงพยาบาลส่งเสริมสุขภาพตำบลคลองขุด (สาขา)", "district": "เมืองสตูล", "reports": 1, "encounters": 1, "patients": 1, "hidden_code_count": 0, "diagnoses": [{"code": "Z131", "count": 1, "label": "คัดกรองเบาหวาน"}, {"code": "Z133", "count": 1, "label": "คัดกรองความผิดปกติทางจิตและพฤติกรรม"}, {"code": "Z136", "count": 1, "label": "คัดกรองโรคหัวใจและหลอดเลือด"}]}]};
 const DIST_COLORS={'ละงู':'#635bff','เมืองสตูล':'#0a72ef','ควนกาหลง':'#f79009','ควนโดน':'#9b51e0','ทุ่งหว้า':'#12b76a'};
 const state={dist:'all', days:DATA.labels.map((_,i)=>i), theme:'light', sortKey:'name', sortDir:1, search:'', reportDay:-1};
 const tip=document.getElementById('tip');
@@ -465,6 +502,10 @@ function stacked(el,labels,distData){
   const datasets=DATA.districts.map(d=>({label:d,data:labels.map(l=>distData[l][d]),backgroundColor:DIST_COLORS[d]||'#9ca3af',borderColor:'#fff',borderWidth:1,borderRadius:4,borderSkipped:false}));
   mountChart(el,{type:'bar',data:{labels,datasets},options:{scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:10},color:'#77716a'}},y:{stacked:true,beginAtZero:true,grid:{color:'#ece6dc'},ticks:{font:{size:10},color:'#77716a'}}},plugins:{datalabels:{display:false},tooltip:{...chartTooltip(),callbacks:{label:c=>`${c.dataset.label}: ${c.raw}`}}}}},240);
 }
+function doughnutChart(el,labels,vals){
+  const colors=['#6246ea','#246bfd','#078a52','#f0a202','#e84d5b','#9a62db','#20a4a7','#ff8a65','#697386','#b8a5ff','#65c18c','#ffd166'];
+  mountChart(el,{type:'doughnut',data:{labels,datasets:[{data:vals,backgroundColor:colors.slice(0,labels.length),borderColor:'#fff',borderWidth:3,hoverOffset:7}]},options:{cutout:'62%',layout:{padding:{top:4,right:8,bottom:4,left:8}},plugins:{legend:{display:true,position:'bottom',labels:{usePointStyle:true,pointStyle:'circle',boxWidth:7,padding:11,font:{size:9}}},datalabels:{display:c=>c.dataset.data[c.dataIndex]>=3,color:'#fff',font:{size:10,weight:'800'},formatter:v=>v},tooltip:{...chartTooltip(),callbacks:{label:c=>`${c.label}: ${c.raw} รายการ`}}}}},330);
+}
 
 // ---- renderers ----
 const KI={
@@ -556,6 +597,47 @@ function renderAns(){
   document.getElementById('ansInsight').innerHTML=`<b>สรุปวันล่าสุด (${DATA.labels[lastIdx]}):</b> ตอบกลับ ${tAns} จาก ${tEnc} การเข้าเยี่ยม (${rate}%) · หน่วยที่ตอบกลับ: ${DATA.units.filter(u=>u.ans[lastIdx]>0).length}/${DATA.units.filter(u=>u.enc[lastIdx]>0||u.masks[lastIdx]>0).length} แห่ง`;
   const ins4=document.getElementById('ins4');
   if(ins4)ins4.innerHTML=`<b>4. คุณภาพและตอบกลับ:</b> Match rate 100% ตลอด 4 วัน · วันล่าสุดตอบกลับ ${tAns}/${tEnc} (${rate}%)`;
+}
+const ICD_CHAPTERS={Z:'ปัจจัยสุขภาพ/บริการ',U:'รหัสวัตถุประสงค์พิเศษ',M:'กล้ามเนื้อและกระดูก',K:'ระบบย่อยอาหาร/ช่องปาก',F:'จิตและพฤติกรรม',J:'ระบบหายใจ',E:'ต่อมไร้ท่อ/เมแทบอลิซึม',G:'ระบบประสาท',S:'การบาดเจ็บ',X:'สาเหตุภายนอก',L:'ผิวหนัง',R:'อาการและอาการแสดง'};
+function renderICD(){
+  const units=ICD10.units.filter(u=>state.dist==='all'||u.district===state.dist);
+  const agg=new Map(),chapters=new Map();
+  let total=0,hidden=0,reports=0;
+  units.forEach(u=>{hidden+=u.hidden_code_count||0;reports+=u.reports||0;u.diagnoses.forEach(d=>{
+    total+=d.count;const old=agg.get(d.code)||{code:d.code,label:d.label,count:0};old.count+=d.count;agg.set(d.code,old);
+    const ch=d.code[0];chapters.set(ch,(chapters.get(ch)||0)+d.count);
+  });});
+  const ranked=[...agg.values()].sort((a,b)=>b.count-a.count||a.code.localeCompare(b.code));
+  const z=chapters.get('Z')||0,uSpecial=chapters.get('U')||0;
+  const zShare=total?Math.round(z/total*1000)/10:0;
+  document.getElementById('icdKpis').innerHTML=`
+    <div class="icd-kpi"><span class="lab">VISIBLE CODES</span><b class="val">${ranked.length}</b><small>รหัสไม่ซ้ำที่มองเห็น</small></div>
+    <div class="icd-kpi"><span class="lab">DIAGNOSIS ITEMS</span><b class="val">${total}</b><small>รายการวินิจฉัยที่แสดง</small></div>
+    <div class="icd-kpi"><span class="lab">SERVICE UNITS</span><b class="val">${units.length}</b><small>หน่วยในพื้นที่ที่เลือก</small></div>
+    <div class="icd-kpi"><span class="lab">Z-CATEGORY</span><b class="val">${zShare}%</b><small>คัดกรอง/บริการสุขภาพ</small></div>`;
+  const top=ranked.slice(0,10).map(d=>({name:`${d.code} · ${d.label.length>24?d.label.slice(0,24)+'…':d.label}`,val:d.count,extra:'รายการ'}));
+  hbar(document.getElementById('icdTopChart'),top);
+  const chap=[...chapters.entries()].sort((a,b)=>b[1]-a[1]);
+  const shown=chap.slice(0,4),other=chap.slice(4).reduce((s,x)=>s+x[1],0);
+  const chapterLabels=shown.map(([c])=>`${c} · ${ICD_CHAPTERS[c]||'หมวดอื่น'}`),chapterVals=shown.map(x=>x[1]);
+  if(other){chapterLabels.push('อื่นๆ');chapterVals.push(other);}
+  doughnutChart(document.getElementById('icdChapterChart'),chapterLabels,chapterVals);
+  document.getElementById('icdSourceNote').innerHTML=`⚠️ <b>ขอบเขตข้อมูล:</b> ถอดจากภาพวันที่ ${ICD10.snapshot_date} และนับเฉพาะรหัสที่มองเห็น · ${hidden?`มีอีก ${hidden} รหัสที่ภาพระบุแต่ไม่แสดงรายละเอียด จึงไม่ถูกนำมาคำนวณ`:'ไม่พบข้อความรหัสที่ซ่อน'} · จำนวนรายการอาจมากกว่า encounter เพราะหนึ่งครั้งรับบริการมีได้หลาย diagnosis`;
+  document.querySelector('#icdTable tbody').innerHTML=units.slice().sort((a,b)=>b.diagnoses.reduce((s,d)=>s+d.count,0)-a.diagnoses.reduce((s,d)=>s+d.count,0)).map(u=>{
+    const n=u.diagnoses.reduce((s,d)=>s+d.count,0);
+    const codes=u.diagnoses.map(d=>`<span class="icd-code">${d.code} <b>${d.count}</b></span>`).join('');
+    const detail=u.diagnoses.map(d=>`<span class="icd-mini"><b>${d.code}</b> — ${d.label}</span>`).join('');
+    return `<tr><td>${u.name}<span class="icd-mini">รหัสหน่วย ${u.code}</span></td><td class="mut">${u.district}</td><td>${u.diagnoses.length}${u.hidden_code_count?` <span class="c-new">+${u.hidden_code_count} ซ่อน</span>`:''}</td><td class="num strong">${n}</td><td>${codes}${detail}</td></tr>`;
+  }).join('');
+  const top3=ranked.slice(0,3),top3Count=top3.reduce((s,d)=>s+d.count,0),top3Share=total?Math.round(top3Count/total*1000)/10:0;
+  const unitRank=units.map(x=>({x,n:x.diagnoses.reduce((s,d)=>s+d.count,0)})).sort((a,b)=>b.n-a.n);
+  const lead=unitRank[0],clinical=total-z-uSpecial,perReport=reports?Math.round(total/reports*100)/100:0;
+  document.getElementById('icdInsights').innerHTML=`
+    <div class="insight a"><b>1. ภาพรวมบริการเชิงป้องกัน:</b> กลุ่ม Z มี ${z}/${total} รายการ (${zShare}%) สะท้อนว่าข้อมูลชุดนี้เน้นการคัดกรอง การให้คำปรึกษา และการติดตาม มากกว่าภาระโรคที่ยืนยันแล้ว</div>
+    <div class="insight"><b>2. รหัสหลัก:</b> ${top3.map(d=>`${d.code} ${d.count}`).join(' · ')} รวม ${top3Count} รายการ (${top3Share}%) โดย ${ranked[0]?.code||'-'} พบสูงสุด</div>
+    <div class="insight g"><b>3. การกระจุกตัวรายหน่วย:</b> ${lead?`${lead.x.name} มี ${lead.n} รายการที่มองเห็น (${Math.round(lead.n/total*1000)/10}% ของพื้นที่ที่เลือก)`:'ไม่มีข้อมูล'} ควรอ่านควบคู่กับจำนวน encounter และรูปแบบงานคัดกรองของหน่วย</div>
+    <div class="insight"><b>4. Clinical signals นอก Z/U:</b> พบ ${clinical} รายการ ครอบคลุมสุขภาพจิต ทางเดินหายใจ ช่องปาก กล้ามเนื้อและกระดูก ผิวหนัง และอาการทั่วไป เป็นสัญญาณสำหรับติดตาม ไม่ใช่อัตราป่วย</div>
+    <div class="insight a"><b>5. ข้อควรระวัง:</b> อัตราที่เห็นอย่างน้อย ${perReport} diagnosis ต่อรายงาน และยังมี ${hidden} รหัสไม่เปิดเผย ห้ามตีความเป็น prevalence หรือจำนวนผู้ป่วยไม่ซ้ำโดยตรง ควรใช้ข้อมูลระดับ encounter/patient ยืนยันก่อนตัดสินใจเชิงนโยบาย</div>`;
 }
 function renderUnitTable(){
   let u=selUnits().slice();
@@ -665,7 +747,7 @@ function buildControls(){
   document.getElementById('stackLegend').innerHTML=DATA.districts.map(d=>`<span style="color:${DIST_COLORS[d]||'#94a3b8'}">■ ${d}</span>`).join('');
   buildReportNav();
 }
-function renderAll(){renderKPI();renderTrend();renderNet();renderStack();renderPareto();renderMom();renderRatio();renderAns();renderUnitTable();renderReport();}
+function renderAll(){renderKPI();renderTrend();renderNet();renderStack();renderPareto();renderMom();renderRatio();renderAns();renderICD();renderUnitTable();renderReport();}
 buildControls();renderAll();
 </script>
 </body></html>

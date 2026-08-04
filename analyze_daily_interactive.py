@@ -258,7 +258,12 @@ TEMPLATE = r"""<!DOCTYPE html>
   .chartjs-box{position:relative;width:100%;min-height:230px}.chartjs-box canvas{display:block!important;width:100%!important;height:100%!important}
   .chart-powered{display:inline-flex;align-items:center;gap:5px;margin-left:8px;padding:2px 7px;border-radius:999px;background:#f1edff;color:#5925dc;font-size:8.5px;font-weight:750;letter-spacing:.04em;vertical-align:middle}
   .chart-powered::before{content:'';width:5px;height:5px;border-radius:50%;background:#6246ea;box-shadow:0 0 0 3px rgba(98,70,234,.12)}
-  @media(max-width:900px){.hero-art{width:250px;min-width:230px}.hero{padding:22px}.kpis{grid-template-columns:repeat(3,1fr)}}
+  .icd-zone{margin:14px 0;padding:12px;border:1px solid #cfdcf8;border-radius:24px;background:linear-gradient(145deg,#edf4ff 0%,#f7f3ff 48%,#ecfbf4 100%);box-shadow:0 6px 0 #dbe5f6}
+  .icd-zone .card{margin:12px 0;background:rgba(255,255,255,.92)}
+  .icd-hero{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:16px 18px 10px}.icd-hero h2{margin:3px 0 2px;font-size:21px}.icd-hero p{margin:0;color:#67627a;font-size:11px}.icd-mark{display:grid;place-items:center;width:72px;height:72px;border-radius:22px;background:#171720;color:#fff;font-size:19px;font-weight:850;letter-spacing:-.04em;transform:rotate(3deg);box-shadow:6px 6px 0 #98d9c2}.icd-mark span{color:#b8a5ff}
+  .icd-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:2px 0 12px}.icd-kpi{min-height:94px;padding:12px 14px;border:1px solid rgba(80,73,112,.14);border-radius:17px;background:#fff;box-shadow:0 3px 0 rgba(80,73,112,.10)}.icd-kpi:nth-child(1){background:#e5dcff}.icd-kpi:nth-child(2){background:#dff2ff}.icd-kpi:nth-child(3){background:#dcf7e8}.icd-kpi:nth-child(4){background:#fff0c8}.icd-kpi .lab{font-size:9px;font-weight:800;letter-spacing:.08em;color:#615d70;text-transform:uppercase}.icd-kpi .val{display:block;margin:5px 0 1px;font-size:25px;font-weight:850;color:#171720}.icd-kpi small{font-size:9px;color:#67627a}
+  .icd-code{display:inline-flex;align-items:center;gap:4px;margin:2px 4px 2px 0;padding:4px 7px;border-radius:8px;background:#f1edff;color:#4d2cc4;font-size:9.5px;font-weight:800;white-space:nowrap}.icd-code b{color:#171720}.source-note{margin:0 0 10px;padding:9px 11px;border:1px dashed #d5a413;border-radius:12px;background:#fff9df;color:#795c00;font-size:10px}.icd-unit-card table{min-width:900px}.icd-unit-card td{vertical-align:top}.icd-unit-card td:nth-child(1){min-width:230px;font-weight:700}.icd-unit-card td:nth-child(5){min-width:370px}.icd-mini{display:block;margin:1px 0;color:#615d70;font-size:9.5px}.icd-charts{align-items:start}
+  @media(max-width:900px){.hero-art{width:250px;min-width:230px}.hero{padding:22px}.kpis{grid-template-columns:repeat(3,1fr)}.icd-kpis{grid-template-columns:repeat(2,1fr)}}
   @media(max-width:680px){.hero{min-height:auto;align-items:flex-start}.hero-art{width:100%;min-width:0;height:130px}.hero-art svg{height:135px}h1{font-size:25px}.kpis{grid-template-columns:repeat(2,1fr)}}
 </style></head>
 <body>
@@ -357,6 +362,37 @@ TEMPLATE = r"""<!DOCTYPE html>
   <div class="insight a" id="ansInsight"></div>
 </div>
 
+<section class="icd-zone">
+  <div class="icd-hero">
+    <div>
+      <div class="eyebrow">Clinical coding lens · 14 หน่วยบริการ</div>
+      <h2>🧬 ภาพรวม ICD-10 ที่พบ</h2>
+      <p>สรุปรหัสวินิจฉัยที่มองเห็นจากภาพรายหน่วย พร้อมโครงสร้างกลุ่มโรคและจุดเฝ้าระวัง</p>
+    </div>
+    <div class="icd-mark" aria-hidden="true">ICD<span>10</span></div>
+  </div>
+  <div class="icd-kpis" id="icdKpis"></div>
+  <div class="grid row icd-charts">
+    <div class="card">
+      <h2 class="p">🏷️ รหัสที่พบบ่อย Top 10 <span class="chart-powered">Chart.js</span></h2>
+      <div class="chartbox" id="icdTopChart"></div>
+    </div>
+    <div class="card">
+      <h2 class="g">🧩 สัดส่วนตามหมวด ICD-10 <span class="chart-powered">Chart.js</span></h2>
+      <div class="chartbox" id="icdChapterChart"></div>
+    </div>
+  </div>
+  <div class="card icd-unit-card">
+    <h2>🏥 ICD-10 รายหน่วยบริการ</h2>
+    <div class="source-note" id="icdSourceNote"></div>
+    <div class="scroll"><table id="icdTable"><thead><tr><th>หน่วยบริการ</th><th>อำเภอ</th><th>รหัสที่พบ</th><th>รายการ</th><th>รายละเอียดรหัส</th></tr></thead><tbody></tbody></table></div>
+  </div>
+  <div class="card">
+    <h2 class="am">🔎 บทวิเคราะห์ ICD-10</h2>
+    <div id="icdInsights"></div>
+  </div>
+</section>
+
 <div class="card">
   <h2 class="g">🗂️ มิติอำเภอ — สรุปรวม Masks รายอำเภอ</h2>
   <div id="distSum"></div>
@@ -398,6 +434,7 @@ TEMPLATE = r"""<!DOCTYPE html>
 <script>/*__DATALABELS__*/</script>
 <script>
 /*__DATA__*/
+/*__ICD10__*/
 const DIST_COLORS={'ละงู':'#635bff','เมืองสตูล':'#0a72ef','ควนกาหลง':'#f79009','ควนโดน':'#9b51e0','ทุ่งหว้า':'#12b76a'};
 const state={dist:'all', days:DATA.labels.map((_,i)=>i), theme:'light', sortKey:'name', sortDir:1, search:'', reportDay:-1};
 const tip=document.getElementById('tip');
@@ -531,6 +568,10 @@ function stacked(el,labels,distData){
   const datasets=DATA.districts.map(d=>({label:d,data:labels.map(l=>distData[l][d]),backgroundColor:DIST_COLORS[d]||'#9ca3af',borderColor:'#fff',borderWidth:1,borderRadius:4,borderSkipped:false}));
   mountChart(el,{type:'bar',data:{labels,datasets},options:{scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:10},color:'#77716a'}},y:{stacked:true,beginAtZero:true,grid:{color:'#ece6dc'},ticks:{font:{size:10},color:'#77716a'}}},plugins:{datalabels:{display:false},tooltip:{...chartTooltip(),callbacks:{label:c=>`${c.dataset.label}: ${c.raw}`}}}}},240);
 }
+function doughnutChart(el,labels,vals){
+  const colors=['#6246ea','#246bfd','#078a52','#f0a202','#e84d5b','#9a62db','#20a4a7','#ff8a65','#697386','#b8a5ff','#65c18c','#ffd166'];
+  mountChart(el,{type:'doughnut',data:{labels,datasets:[{data:vals,backgroundColor:colors.slice(0,labels.length),borderColor:'#fff',borderWidth:3,hoverOffset:7}]},options:{cutout:'62%',layout:{padding:{top:4,right:8,bottom:4,left:8}},plugins:{legend:{display:true,position:'bottom',labels:{usePointStyle:true,pointStyle:'circle',boxWidth:7,padding:11,font:{size:9}}},datalabels:{display:c=>c.dataset.data[c.dataIndex]>=3,color:'#fff',font:{size:10,weight:'800'},formatter:v=>v},tooltip:{...chartTooltip(),callbacks:{label:c=>`${c.label}: ${c.raw} รายการ`}}}}},330);
+}
 
 // ---- renderers ----
 const KI={
@@ -622,6 +663,47 @@ function renderAns(){
   document.getElementById('ansInsight').innerHTML=`<b>สรุปวันล่าสุด (${DATA.labels[lastIdx]}):</b> ตอบกลับ ${tAns} จาก ${tEnc} การเข้าเยี่ยม (${rate}%) · หน่วยที่ตอบกลับ: ${DATA.units.filter(u=>u.ans[lastIdx]>0).length}/${DATA.units.filter(u=>u.enc[lastIdx]>0||u.masks[lastIdx]>0).length} แห่ง`;
   const ins4=document.getElementById('ins4');
   if(ins4)ins4.innerHTML=`<b>4. คุณภาพและตอบกลับ:</b> Match rate 100% ตลอด 4 วัน · วันล่าสุดตอบกลับ ${tAns}/${tEnc} (${rate}%)`;
+}
+const ICD_CHAPTERS={Z:'ปัจจัยสุขภาพ/บริการ',U:'รหัสวัตถุประสงค์พิเศษ',M:'กล้ามเนื้อและกระดูก',K:'ระบบย่อยอาหาร/ช่องปาก',F:'จิตและพฤติกรรม',J:'ระบบหายใจ',E:'ต่อมไร้ท่อ/เมแทบอลิซึม',G:'ระบบประสาท',S:'การบาดเจ็บ',X:'สาเหตุภายนอก',L:'ผิวหนัง',R:'อาการและอาการแสดง'};
+function renderICD(){
+  const units=ICD10.units.filter(u=>state.dist==='all'||u.district===state.dist);
+  const agg=new Map(),chapters=new Map();
+  let total=0,hidden=0,reports=0;
+  units.forEach(u=>{hidden+=u.hidden_code_count||0;reports+=u.reports||0;u.diagnoses.forEach(d=>{
+    total+=d.count;const old=agg.get(d.code)||{code:d.code,label:d.label,count:0};old.count+=d.count;agg.set(d.code,old);
+    const ch=d.code[0];chapters.set(ch,(chapters.get(ch)||0)+d.count);
+  });});
+  const ranked=[...agg.values()].sort((a,b)=>b.count-a.count||a.code.localeCompare(b.code));
+  const z=chapters.get('Z')||0,uSpecial=chapters.get('U')||0;
+  const zShare=total?Math.round(z/total*1000)/10:0;
+  document.getElementById('icdKpis').innerHTML=`
+    <div class="icd-kpi"><span class="lab">VISIBLE CODES</span><b class="val">${ranked.length}</b><small>รหัสไม่ซ้ำที่มองเห็น</small></div>
+    <div class="icd-kpi"><span class="lab">DIAGNOSIS ITEMS</span><b class="val">${total}</b><small>รายการวินิจฉัยที่แสดง</small></div>
+    <div class="icd-kpi"><span class="lab">SERVICE UNITS</span><b class="val">${units.length}</b><small>หน่วยในพื้นที่ที่เลือก</small></div>
+    <div class="icd-kpi"><span class="lab">Z-CATEGORY</span><b class="val">${zShare}%</b><small>คัดกรอง/บริการสุขภาพ</small></div>`;
+  const top=ranked.slice(0,10).map(d=>({name:`${d.code} · ${d.label.length>24?d.label.slice(0,24)+'…':d.label}`,val:d.count,extra:'รายการ'}));
+  hbar(document.getElementById('icdTopChart'),top);
+  const chap=[...chapters.entries()].sort((a,b)=>b[1]-a[1]);
+  const shown=chap.slice(0,4),other=chap.slice(4).reduce((s,x)=>s+x[1],0);
+  const chapterLabels=shown.map(([c])=>`${c} · ${ICD_CHAPTERS[c]||'หมวดอื่น'}`),chapterVals=shown.map(x=>x[1]);
+  if(other){chapterLabels.push('อื่นๆ');chapterVals.push(other);}
+  doughnutChart(document.getElementById('icdChapterChart'),chapterLabels,chapterVals);
+  document.getElementById('icdSourceNote').innerHTML=`⚠️ <b>ขอบเขตข้อมูล:</b> ถอดจากภาพวันที่ ${ICD10.snapshot_date} และนับเฉพาะรหัสที่มองเห็น · ${hidden?`มีอีก ${hidden} รหัสที่ภาพระบุแต่ไม่แสดงรายละเอียด จึงไม่ถูกนำมาคำนวณ`:'ไม่พบข้อความรหัสที่ซ่อน'} · จำนวนรายการอาจมากกว่า encounter เพราะหนึ่งครั้งรับบริการมีได้หลาย diagnosis`;
+  document.querySelector('#icdTable tbody').innerHTML=units.slice().sort((a,b)=>b.diagnoses.reduce((s,d)=>s+d.count,0)-a.diagnoses.reduce((s,d)=>s+d.count,0)).map(u=>{
+    const n=u.diagnoses.reduce((s,d)=>s+d.count,0);
+    const codes=u.diagnoses.map(d=>`<span class="icd-code">${d.code} <b>${d.count}</b></span>`).join('');
+    const detail=u.diagnoses.map(d=>`<span class="icd-mini"><b>${d.code}</b> — ${d.label}</span>`).join('');
+    return `<tr><td>${u.name}<span class="icd-mini">รหัสหน่วย ${u.code}</span></td><td class="mut">${u.district}</td><td>${u.diagnoses.length}${u.hidden_code_count?` <span class="c-new">+${u.hidden_code_count} ซ่อน</span>`:''}</td><td class="num strong">${n}</td><td>${codes}${detail}</td></tr>`;
+  }).join('');
+  const top3=ranked.slice(0,3),top3Count=top3.reduce((s,d)=>s+d.count,0),top3Share=total?Math.round(top3Count/total*1000)/10:0;
+  const unitRank=units.map(x=>({x,n:x.diagnoses.reduce((s,d)=>s+d.count,0)})).sort((a,b)=>b.n-a.n);
+  const lead=unitRank[0],clinical=total-z-uSpecial,perReport=reports?Math.round(total/reports*100)/100:0;
+  document.getElementById('icdInsights').innerHTML=`
+    <div class="insight a"><b>1. ภาพรวมบริการเชิงป้องกัน:</b> กลุ่ม Z มี ${z}/${total} รายการ (${zShare}%) สะท้อนว่าข้อมูลชุดนี้เน้นการคัดกรอง การให้คำปรึกษา และการติดตาม มากกว่าภาระโรคที่ยืนยันแล้ว</div>
+    <div class="insight"><b>2. รหัสหลัก:</b> ${top3.map(d=>`${d.code} ${d.count}`).join(' · ')} รวม ${top3Count} รายการ (${top3Share}%) โดย ${ranked[0]?.code||'-'} พบสูงสุด</div>
+    <div class="insight g"><b>3. การกระจุกตัวรายหน่วย:</b> ${lead?`${lead.x.name} มี ${lead.n} รายการที่มองเห็น (${Math.round(lead.n/total*1000)/10}% ของพื้นที่ที่เลือก)`:'ไม่มีข้อมูล'} ควรอ่านควบคู่กับจำนวน encounter และรูปแบบงานคัดกรองของหน่วย</div>
+    <div class="insight"><b>4. Clinical signals นอก Z/U:</b> พบ ${clinical} รายการ ครอบคลุมสุขภาพจิต ทางเดินหายใจ ช่องปาก กล้ามเนื้อและกระดูก ผิวหนัง และอาการทั่วไป เป็นสัญญาณสำหรับติดตาม ไม่ใช่อัตราป่วย</div>
+    <div class="insight a"><b>5. ข้อควรระวัง:</b> อัตราที่เห็นอย่างน้อย ${perReport} diagnosis ต่อรายงาน และยังมี ${hidden} รหัสไม่เปิดเผย ห้ามตีความเป็น prevalence หรือจำนวนผู้ป่วยไม่ซ้ำโดยตรง ควรใช้ข้อมูลระดับ encounter/patient ยืนยันก่อนตัดสินใจเชิงนโยบาย</div>`;
 }
 function renderUnitTable(){
   let u=selUnits().slice();
@@ -731,7 +813,7 @@ function buildControls(){
   document.getElementById('stackLegend').innerHTML=DATA.districts.map(d=>`<span style="color:${DIST_COLORS[d]||'#94a3b8'}">■ ${d}</span>`).join('');
   buildReportNav();
 }
-function renderAll(){renderKPI();renderTrend();renderNet();renderStack();renderPareto();renderMom();renderRatio();renderAns();renderUnitTable();renderReport();}
+function renderAll(){renderKPI();renderTrend();renderNet();renderStack();renderPareto();renderMom();renderRatio();renderAns();renderICD();renderUnitTable();renderReport();}
 buildControls();renderAll();
 </script>
 </body></html>"""
@@ -741,11 +823,15 @@ with open(os.path.join(VENDOR, "chart.umd.min.js"), encoding="utf-8") as f:
     chartjs_src = f.read()
 with open(os.path.join(VENDOR, "chartjs-plugin-datalabels.min.js"), encoding="utf-8") as f:
     datalabels_src = f.read()
+with open(os.path.join(BASE_DIR, "icd10_summary.json"), encoding="utf-8") as f:
+    icd10_data = json.load(f)
+icd10_js = "const ICD10 = " + json.dumps(icd10_data, ensure_ascii=False) + ";"
 
 html = (TEMPLATE
         .replace("/*__CHARTJS__*/", chartjs_src)
         .replace("/*__DATALABELS__*/", datalabels_src)
-        .replace("/*__DATA__*/", data_js))
+        .replace("/*__DATA__*/", data_js)
+        .replace("/*__ICD10__*/", icd10_js))
 OUT = os.environ.get("PHR_DASHBOARD_OUT", os.path.join(BASE_DIR, "index.html"))
 with open(OUT, "w", encoding="utf-8") as f:
     f.write(html)

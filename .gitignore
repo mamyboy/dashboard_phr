@@ -12,3 +12,4 @@ __pycache__/
 # Local test artifacts
 *.log
 /tmp/
+.hermes/
