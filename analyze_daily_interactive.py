@@ -1,0 +1,752 @@
+# -*- coding: utf-8 -*-
+"""Build a self-contained interactive PHR Masks dashboard with Chart.js."""
+import csv, glob, re, os, json
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+FOLDER = os.environ.get("PHR_CSV_DIR", os.path.join(BASE_DIR, "csv"))
+FILES = sorted(glob.glob(os.path.join(FOLDER, "phr_masks_hospital_*.csv")))
+if not FILES:
+    raise FileNotFoundError(
+        f"No PHR CSV snapshots found in {FOLDER!r}. "
+        "Set PHR_CSV_DIR or place files under ./csv/."
+    )
+
+def parse_dt(fn):
+    m = re.search(r"(\d{8})_(\d{6})", os.path.basename(fn))
+    d, t = m.group(1), m.group(2)
+    label = f"{int(d[6:8])}/{int(d[4:6])}/{d[:4]}"
+    return label, d, t
+
+# dedupe: วันเดียวกันเก็บเฉพาะ snapshot ล่าสุด
+latest = {}
+for fn in FILES:
+    label, d, t = parse_dt(fn)
+    if d not in latest or t > latest[d][1]:
+        latest[d] = (fn, t, label)
+days_raw = sorted(latest.values(), key=lambda x: x[0])  # sort by date+time
+
+def opt(v):
+    v = (v or "").strip()
+    return int(v) if v not in ("", None) else None
+
+days = []
+for fn, t, label in days_raw:
+    data = {}
+    with open(fn, encoding="utf-8-sig") as f:
+        for row in csv.DictReader(f):
+            code = row["hospital_code"].strip()
+            name = re.sub(r"\s*อ\.[ก-์]+\s*จ\.[ก-์]+\s*$", "", row["hospital_name"]).strip()
+            data[code] = dict(
+                masks=int(row["masks"]),
+                cit=opt(row.get("citizens")),
+                enc=opt(row.get("encounters")),
+                ans=opt(row.get("answered")),
+                name=name, dist=row["district_name"].strip(), time=t)
+    days.append(dict(label=label, sortkey=d, data=data))
+labels = [d["label"] for d in days]
+L = len(days)
+
+canon = {}
+for d in days:
+    for code, v in d["data"].items():
+        canon[code] = v
+all_codes = list(canon.keys())
+districts = sorted({v["dist"] for v in canon.values()})
+
+unit_recs = []
+for code in all_codes:
+    masks = [d["data"].get(code, {}).get("masks", 0) for d in days]
+    cit = [d["data"].get(code, {}).get("cit", 0) for d in days]
+    enc = [d["data"].get(code, {}).get("enc", 0) or 0 for d in days]
+    ans = [d["data"].get(code, {}).get("ans", 0) or 0 for d in days]
+    unit_recs.append(dict(code=code, name=canon[code]["name"], dist=canon[code]["dist"],
+                          masks=masks, cit=cit, enc=enc, ans=ans, last=canon[code]["masks"]))
+# sort by last masks desc
+unit_recs.sort(key=lambda u: -u["last"])
+
+# daily answered totals (new metric)
+tot_enc = [sum(u["enc"][i] for u in unit_recs) for i in range(L)]
+tot_ans = [sum(u["ans"][i] for u in unit_recs) for i in range(L)]
+
+# district per day (global)
+dist_day = {dt: {d: 0 for d in districts} for dt in labels}
+for di, d in enumerate(days):
+    for code, v in d["data"].items():
+        dist_day[labels[di]][v["dist"]] += v["masks"]
+
+# global totals
+tot_masks = [sum(u["masks"][i] for u in unit_recs) for i in range(L)]
+tot_cit = [sum(u["cit"][i] for u in unit_recs) for i in range(L)]
+
+DATA = dict(labels=labels, districts=districts, units=unit_recs,
+            distDay=dist_day, totMasks=tot_masks, totCit=tot_cit,
+            totEnc=tot_enc, totAns=tot_ans,
+            nUnitsAll=len(unit_recs))
+
+data_js = "const DATA = " + json.dumps(DATA, ensure_ascii=False) + ";"
+
+TEMPLATE = r"""<!DOCTYPE html>
+<html lang="th" data-theme="light">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>วิเคราะห์รายวัน PHR Masks (Interactive)</title>
+<style>
+  :root{--bg:#eef2f7;--card:#ffffff;--card2:#f8fafc;--line:#dbe3ec;--txt:#1e293b;--mut:#64748b;--accent:#2563eb;--green:#16a34a;--red:#dc2626;--amber:#d97706;
+        --shadow-s:0 1px 2px rgba(15,23,42,.06);
+        --shadow-m:0 3px 10px rgba(15,23,42,.07);
+        --shadow-l:0 12px 28px rgba(15,23,42,.10);
+        --radius:14px;--gap:14px;}
+  [data-theme="dark"]{--bg:#0b1626;--card:#14233a;--card2:#0f1d30;--line:#283f5e;--txt:#eaf2fb;--mut:#9bb3cc;--accent:#5fa8ff;--green:#34d399;--red:#f87171;--amber:#fbbf24;
+        --shadow-s:0 1px 2px rgba(0,0,0,.3);--shadow-m:0 4px 12px rgba(0,0,0,.32);--shadow-l:0 14px 30px rgba(0,0,0,.4);}
+  *{box-sizing:border-box}
+  body{margin:0;background:
+      radial-gradient(1000px 640px at 88% -8%, rgba(37,99,235,.09), transparent 55%),
+      radial-gradient(820px 560px at -5% 108%, rgba(22,163,74,.07), transparent 55%),
+      var(--bg);
+    color:var(--txt);font-family:'Sarabun','Helvetica Neue',Arial,sans-serif;padding:24px 20px;line-height:1.55;transition:background .3s,color .3s;max-width:1180px;margin:0 auto}
+  h1{font-size:21px;margin:0 0 4px;color:var(--txt);letter-spacing:.2px;font-weight:800} .sub{color:var(--mut);font-size:12.5px;margin-bottom:14px}
+  .topbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .grid{display:grid;gap:var(--gap)} .kpis{grid-template-columns:repeat(auto-fit,minmax(140px,1fr));margin-bottom:var(--gap)}
+  .kpi{position:relative;background:linear-gradient(160deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:var(--radius);padding:13px 13px;box-shadow:var(--shadow-m);overflow:hidden;transition:transform .2s,box-shadow .2s}
+  .kpi::before{content:'';position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--accent),var(--green));opacity:.0;transition:opacity .2s}
+  .kpi:hover{transform:translateY(-3px);box-shadow:var(--shadow-l)}
+  .kpi:hover::before{opacity:1}
+  .kpi .v{font-size:23px;font-weight:800;line-height:1.05} .kpi .l{font-size:11.5px;color:var(--mut);margin-top:5px;line-height:1.3}
+  .kpi .v.g{color:var(--green)} .kpi .v.a{color:var(--accent)} .kpi .v.am{color:var(--amber)}
+  .card{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:var(--radius);padding:16px 16px 14px;margin-bottom:var(--gap);box-shadow:var(--shadow-m);animation:fade .45s ease;transition:transform .2s,box-shadow .2s}
+  .card:hover{box-shadow:var(--shadow-l)}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .card h2{font-size:14px;margin:0 0 12px;color:var(--txt);border-left:4px solid var(--accent);padding-left:10px;font-weight:700;letter-spacing:.2px}
+  .card h2.g{border-color:var(--green)} .card h2.am{border-color:var(--amber)} .card h2.p{border-color:#9333ea}
+  .chartbox{margin-top:4px} .chartbox svg{display:block;width:100%;height:auto}
+  .row{grid-template-columns:1fr 1fr} @media(max-width:900px){.row{grid-template-columns:1fr}}
+  .legend{font-size:12px;color:var(--mut);margin-top:16px;padding-top:12px;border-top:1px dashed var(--line);display:flex;gap:16px;flex-wrap:wrap}
+  .legend span::before{content:'';display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:middle}
+  table{width:100%;border-collapse:separate;border-spacing:0;font-size:12.5px}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}
+  th{color:var(--mut);font-weight:600;background:var(--card2);cursor:pointer;user-select:none;position:sticky;top:0}
+  th:hover{color:var(--accent)} th .arr{font-size:9px;opacity:.7}
+  tbody tr{transition:background .15s} tbody tr:hover{background:rgba(37,99,235,.06)}
+  td.num{text-align:center;font-variant-numeric:tabular-nums}
+  td.strong{font-weight:700} .mut{color:var(--mut)}
+  .c-up{color:var(--green);font-weight:700} .c-down{color:var(--red);font-weight:700}
+  .c-flat{color:var(--mut)} .c-new{color:var(--amber);font-weight:700} .c-base{color:var(--mut);font-weight:600}
+  .insight{background:var(--card2);border:1px solid var(--line);border-left:4px solid var(--amber);border-radius:12px;padding:14px 16px;font-size:13px;color:var(--txt);margin-bottom:12px;box-shadow:var(--shadow-s)}
+  .insight b{color:var(--amber)} .insight.g b{color:var(--green)} .insight.a b{color:var(--accent)}
+  .scroll{max-height:440px;overflow:auto;border-radius:12px}
+  .controls{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin-bottom:14px}
+  .pill{background:var(--card);border:1px solid var(--line);color:var(--txt);padding:7px 15px;border-radius:30px;font-size:12.5px;cursor:pointer;transition:.18s;box-shadow:var(--shadow-s)}
+  .pill:hover{transform:translateY(-2px);border-color:var(--accent);box-shadow:var(--shadow-m)}
+  .pill.on{background:linear-gradient(135deg,var(--accent),var(--green));color:#fff;border-color:transparent;box-shadow:0 4px 12px rgba(37,99,235,.35)}
+  .chip{background:var(--card);border:1px solid var(--line);color:var(--mut);padding:6px 13px;border-radius:10px;font-size:12px;cursor:pointer;transition:.18s;box-shadow:var(--shadow-s)}
+  .chip:hover{transform:translateY(-2px);border-color:var(--green)}
+  .chip.on{background:linear-gradient(135deg,var(--green),#22c55e);color:#fff;border-color:transparent;box-shadow:0 4px 12px rgba(22,163,74,.3)}
+  .search{background:var(--card);border:1px solid var(--line);color:var(--txt);padding:8px 14px;border-radius:10px;font-size:12.5px;min-width:220px;outline:none;transition:.18s;box-shadow:var(--shadow-s)}
+  .search:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--txt);padding:8px 16px;border-radius:10px;font-size:12.5px;cursor:pointer;transition:.18s;box-shadow:var(--shadow-s)}
+  .btn:hover{transform:translateY(-2px);border-color:var(--accent);box-shadow:var(--shadow-m)}
+  #tip{position:fixed;pointer-events:none;background:#0f172a;color:#fff;padding:7px 11px;border-radius:8px;font-size:12px;opacity:0;transition:opacity .12s;z-index:99;box-shadow:0 8px 24px rgba(0,0,0,.4);max-width:240px}
+  .tag{display:inline-block;font-size:11px;padding:2px 9px;border-radius:20px;background:linear-gradient(135deg,rgba(22,163,74,.18),rgba(37,99,235,.18));color:var(--green);margin-left:8px;font-weight:600}
+  .chartbox{margin-top:6px}
+  .dsumwrap{margin-top:16px;padding-top:14px;border-top:1px dashed var(--line)}
+  .dsumwrap table{font-size:12.5px}
+  .dsumwrap th,.dsumwrap td{padding:8px 10px}
+  .rep-day{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:12px}
+  .rep-head{font-size:14px;font-weight:700;color:var(--accent);margin-bottom:10px}
+  .rep-sec{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px}
+  .rep-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
+  .rep-badge.c-up{background:rgba(22,163,74,.15);color:var(--green)}
+  .rep-badge.c-new{background:rgba(217,119,6,.15);color:var(--amber)}
+  .rep-badge.c-down{background:rgba(220,38,38,.15);color:var(--red)}
+  .rep-item{font-size:12.5px;background:var(--card);border:1px solid var(--line);padding:3px 10px;border-radius:8px;color:var(--txt)}
+  .rep-item b{font-weight:800}
+  .rep-empty{font-size:12.5px;color:var(--mut);font-style:italic}
+
+  /* Clinical Aurora Light — Stripe depth × Vercel precision */
+  :root{--bg:#f6f8fc;--card:#fff;--card2:#f8faff;--line:#e6eaf2;--txt:#101828;--mut:#667085;
+    --accent:#635bff;--accent2:#0a72ef;--green:#12b76a;--red:#f04438;--amber:#f79009;
+    --shadow-s:0 0 0 1px rgba(16,24,40,.055),0 1px 2px rgba(16,24,40,.035);
+    --shadow-m:0 0 0 1px rgba(16,24,40,.06),0 2px 5px rgba(16,24,40,.04),0 12px 28px -22px rgba(50,50,93,.25);
+    --shadow-l:0 0 0 1px rgba(99,91,255,.13),0 18px 38px -24px rgba(50,50,93,.32);
+    --radius:12px;--gap:14px}
+  html{color-scheme:light;background:#f6f8fc}
+  body{max-width:1120px;padding:20px 18px 36px;background:
+    radial-gradient(720px 260px at 8% -4%,rgba(99,91,255,.12),transparent 66%),
+    radial-gradient(620px 240px at 92% 0%,rgba(10,114,239,.09),transparent 68%),
+    linear-gradient(180deg,#fbfcff 0,#f6f8fc 310px);font-family:-apple-system,BlinkMacSystemFont,'Noto Sans Thai','Leelawadee UI','Segoe UI',sans-serif;letter-spacing:-.01em}
+  .hero{position:relative;display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding:20px 22px 18px;margin-bottom:12px;background:rgba(255,255,255,.82);backdrop-filter:blur(16px);border-radius:14px;box-shadow:var(--shadow-m);overflow:hidden}
+  .hero::before{content:'';position:absolute;inset:0 0 auto;height:3px;background:linear-gradient(90deg,#635bff,#0a72ef 48%,#12b76a)}
+  .eyebrow{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:5px}
+  h1{font-size:23px;line-height:1.18;letter-spacing:-.035em;font-weight:650;margin:0;color:#101828}
+  .sub{font-size:12px;margin:6px 0 0;color:var(--mut)}
+  .live-status{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;padding:7px 10px;border-radius:999px;background:#ecfdf3;color:#027a48;font-size:11px;font-weight:650;box-shadow:inset 0 0 0 1px #abefc6}
+  .live-dot{width:7px;height:7px;border-radius:50%;background:#12b76a;box-shadow:0 0 0 4px rgba(18,183,106,.12);animation:pulse 2.2s ease-in-out infinite}
+  @keyframes pulse{50%{box-shadow:0 0 0 7px rgba(18,183,106,0)}}
+  .filterbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;margin-bottom:14px;background:rgba(255,255,255,.88);border-radius:12px;box-shadow:var(--shadow-s)}
+  .filterbar .controls{margin:0}
+  .filter-label{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:650;color:#475467}
+  .light-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:8px;background:#fff7ed;color:#b54708;font-size:11px;font-weight:650;box-shadow:inset 0 0 0 1px #fedf89}
+  .kpis{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .kpi{min-height:92px;padding:13px 14px;background:#fff;border:0;border-radius:11px;box-shadow:var(--shadow-m)}
+  .kpi::before{height:2px;opacity:1;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+  .kpi:hover{transform:translateY(-2px);box-shadow:var(--shadow-l)}
+  .kpi .v{font-size:25px;font-weight:650;letter-spacing:-.04em;font-variant-numeric:tabular-nums;color:#101828}
+  .kpi .l{font-size:10.5px;line-height:1.35;color:#667085}
+  .card{background:#fff;border:0;border-radius:12px;padding:15px;margin-bottom:var(--gap);box-shadow:var(--shadow-m);animation:fade .32s ease}
+  .card:hover{box-shadow:var(--shadow-l)}
+  .card h2{display:flex;align-items:center;min-height:23px;font-size:13px;font-weight:650;letter-spacing:-.012em;margin:0 0 11px;padding:0 0 10px;border-left:0;border-bottom:1px solid #eef1f6;color:#1d2939}
+  .card h2::after{content:'';width:5px;height:5px;margin-left:auto;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px rgba(99,91,255,.08)}
+  .card h2.g::after{background:var(--green);box-shadow:0 0 0 4px rgba(18,183,106,.08)}
+  .card h2.am::after{background:var(--amber);box-shadow:0 0 0 4px rgba(247,144,9,.08)}
+  .card h2.p::after{background:#9b51e0;box-shadow:0 0 0 4px rgba(155,81,224,.08)}
+  .chartbox{margin-top:2px;padding:2px 0}.chartbox svg{filter:none!important}
+  .legend{margin-top:10px;padding-top:9px;gap:12px;font-size:10.5px;border-top:1px solid #eef1f6}
+  .pill,.chip,.btn,.search{border:0;box-shadow:inset 0 0 0 1px #e4e7ec,0 1px 2px rgba(16,24,40,.03);background:#fff}
+  .pill{padding:6px 10px;border-radius:7px;font-size:11px}.chip{padding:6px 9px;border-radius:7px;font-size:11px}
+  .pill:hover,.chip:hover{transform:none;box-shadow:inset 0 0 0 1px #b9b5ff,0 2px 5px rgba(99,91,255,.08)}
+  .pill.on,.chip.on{background:#635bff;color:#fff;box-shadow:0 1px 2px rgba(50,50,93,.12),0 5px 12px -7px rgba(99,91,255,.6)}
+  .search{height:34px;border-radius:8px;font-size:11.5px}.search:focus{box-shadow:0 0 0 3px rgba(99,91,255,.14),inset 0 0 0 1px #635bff}
+  table{font-size:11.5px}th,td{padding:8px 9px;border-bottom:1px solid #eef1f6}th{background:#f9fafb;color:#667085;font-size:10.5px;font-weight:650}
+  tbody tr:hover{background:#f8f7ff}
+  .scroll{border-radius:9px;box-shadow:inset 0 0 0 1px #eef1f6}
+  .insight{margin-bottom:8px;border:0;border-left:3px solid var(--amber);border-radius:8px;padding:10px 12px;background:#fffbeb;box-shadow:inset 0 0 0 1px #fef0c7;font-size:11.5px}
+  .insight.a{background:#f5f3ff;border-left-color:var(--accent);box-shadow:inset 0 0 0 1px #e9e7ff}.insight.g{background:#ecfdf3;border-left-color:var(--green);box-shadow:inset 0 0 0 1px #d1fadf}
+  .rep-day{background:#fafbfc;border:0;border-radius:9px;padding:11px 12px;box-shadow:inset 0 0 0 1px #eaecf0}
+  .rep-item{border:0;border-radius:6px;box-shadow:inset 0 0 0 1px #eaecf0;background:#fff;font-size:11px}
+  .tag{padding:3px 7px;border-radius:5px;background:#f1f0ff;color:#5925dc;font-size:9px;vertical-align:middle}
+  #tip{border-radius:7px;background:#101828;box-shadow:0 10px 25px rgba(16,24,40,.18)}
+  :focus-visible{outline:2px solid #1570ef;outline-offset:2px}
+  @media(max-width:980px){.kpis{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:640px){body{padding:12px}.hero{align-items:flex-start;flex-direction:column;padding:17px}.kpis{grid-template-columns:repeat(2,1fr)}.row{grid-template-columns:1fr}.live-status{align-self:flex-start}h1{font-size:20px}}
+  @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+  /* Playful Health Bento Light — Figma × Airtable × Clay */
+  :root{--bg:#faf9f5;--card:#fff;--card2:#fbfaf7;--line:#e8e2d8;--txt:#171720;--mut:#6f6b65;
+    --accent:#6246ea;--accent2:#246bfd;--green:#078a52;--red:#e84d5b;--amber:#d98b00;
+    --shadow-s:0 1px 2px rgba(31,27,20,.06),inset 0 -1px 0 rgba(31,27,20,.03);
+    --shadow-m:0 1px 2px rgba(31,27,20,.06),0 9px 24px -19px rgba(50,35,100,.28),inset 0 1px 0 rgba(255,255,255,.75);
+    --shadow-l:0 2px 3px rgba(31,27,20,.08),0 18px 36px -24px rgba(67,8,159,.34);--radius:18px;--gap:15px}
+  html{background:#faf9f5}
+  body{max-width:1180px;padding:18px 18px 40px;background:
+    radial-gradient(540px 360px at 1% 2%,rgba(193,176,255,.22),transparent 70%),
+    radial-gradient(520px 360px at 99% 4%,rgba(59,211,253,.16),transparent 70%),#faf9f5;
+    font-family:-apple-system,BlinkMacSystemFont,'Noto Sans Thai','Leelawadee UI','Segoe UI',sans-serif;color:var(--txt)}
+  .hero{min-height:168px;align-items:center;padding:24px 28px;margin-bottom:14px;background:
+    radial-gradient(circle at 12% 14%,rgba(255,255,255,.7) 0 2px,transparent 3px),
+    linear-gradient(115deg,#e7ddff 0%,#d4f3ff 42%,#dcf8cc 74%,#fff0ba 100%);
+    border:1px solid rgba(23,23,32,.12);border-radius:26px;box-shadow:0 3px 0 rgba(23,23,32,.10),0 18px 36px -28px rgba(67,8,159,.4)}
+  .hero::before{display:none}.hero-copy{position:relative;z-index:2;max-width:620px}.eyebrow{display:inline-flex;padding:5px 9px;border-radius:999px;background:rgba(255,255,255,.72);color:#43089f;border:1px solid rgba(67,8,159,.14);font-size:9px;letter-spacing:.14em}
+  h1{font-size:30px;line-height:1.08;letter-spacing:-.045em;font-weight:750;color:#171720;margin-top:9px}.sub{max-width:560px;font-size:12.5px;line-height:1.55;color:#55515c;margin-top:8px}
+  .hero-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:13px}.live-status{padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.82);border:1px solid rgba(7,138,82,.22);box-shadow:none}
+  .hero-art{position:relative;z-index:1;width:310px;min-width:280px;align-self:stretch;display:flex;align-items:center;justify-content:center}.hero-art svg{width:100%;height:150px;overflow:visible;filter:drop-shadow(0 12px 16px rgba(67,8,159,.14))}
+  .float-a{animation:floatA 4.5s ease-in-out infinite}.float-b{animation:floatB 5.2s ease-in-out infinite}.float-c{animation:floatC 4.8s ease-in-out infinite}
+  @keyframes floatA{50%{transform:translateY(-5px) rotate(1deg)}}@keyframes floatB{50%{transform:translateY(4px) rotate(-1deg)}}@keyframes floatC{50%{transform:translateY(-3px)}}
+  .filterbar{padding:10px 13px;border:1px dashed #d8d0c3;background:rgba(255,255,255,.78);border-radius:16px;box-shadow:var(--shadow-s)}
+  .filter-label{font-size:10.5px;color:#4b4742}.light-badge{border-radius:999px;background:#fff5ca;color:#8d5d00;border:1px solid #ebc75a;box-shadow:none}
+  .pill,.chip{border-radius:999px!important;padding:6px 11px}.pill.on,.chip.on{background:#171720;color:#fff;box-shadow:3px 3px 0 #c1b0ff}.pill:hover,.chip:hover{transform:translateY(-1px);box-shadow:2px 2px 0 #c1b0ff}
+  .kpis{gap:12px}.kpi{position:relative;min-height:112px;padding:13px 14px 12px;border:1px solid rgba(23,23,32,.13);border-radius:18px;box-shadow:0 3px 0 rgba(23,23,32,.08);overflow:hidden}
+  .kpi::before{display:none}.kpi:nth-child(1){background:#e8e0ff}.kpi:nth-child(2){background:#dff7d4}.kpi:nth-child(3){background:#d9f3ff}.kpi:nth-child(4){background:#fff0bf}.kpi:nth-child(5){background:#ffdfe5}.kpi:nth-child(6){background:#fff}
+  .kpi:hover{transform:translateY(-3px) rotate(-.35deg);box-shadow:5px 6px 0 rgba(23,23,32,.12)}
+  .kpi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}.kico{display:grid;place-items:center;width:30px;height:30px;border-radius:10px;background:rgba(255,255,255,.72);border:1px solid rgba(23,23,32,.10)}.kico svg{width:18px;height:18px;stroke:#171720;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}.kmini{font-size:9px;font-weight:700;color:rgba(23,23,32,.55);letter-spacing:.04em}
+  .kpi .v{font-size:27px;font-weight:760;color:#171720;letter-spacing:-.05em}.kpi .v.a,.kpi .v.g,.kpi .v.am{color:#171720}.kpi .l{font-size:10.5px;color:#4f4b47;margin-top:3px}
+  .card{border:1px solid #e2dbcf;border-radius:20px;padding:16px;background:#fff;box-shadow:var(--shadow-m)}.card:hover{transform:translateY(-1px);box-shadow:0 3px 0 #dad4c8,0 18px 34px -27px rgba(67,8,159,.28)}
+  .card h2{font-size:13px;border-bottom:1px dashed #ded7ca;padding-bottom:11px}.card h2::after{width:9px;height:9px;background:#c1b0ff;box-shadow:0 0 0 5px #f1edff}.card h2.g::after{background:#84e7a5;box-shadow:0 0 0 5px #e8faee}.card h2.am::after{background:#f8cc65;box-shadow:0 0 0 5px #fff7df}.card h2.p::after{background:#fc7981;box-shadow:0 0 0 5px #ffeaec}
+  .row>.card:first-child{background:linear-gradient(180deg,#fff,#fdfbff)}.row>.card:last-child{background:linear-gradient(180deg,#fff,#f9fffb)}
+  .legend{border-top:1px dashed #ded7ca}.search{border-radius:999px;background:#fff}.scroll{border:1px solid #e2dbcf;border-radius:13px;box-shadow:none}
+  .insight{border-radius:14px}.rep-day{border-radius:14px;background:#fbfaf7;border:1px dashed #d8d0c3;box-shadow:none}.rep-item{border-radius:999px}
+  .clip-label{font-size:9px;font-weight:750;letter-spacing:.08em;text-transform:uppercase;fill:#43089f}
+  .chartjs-box{position:relative;width:100%;min-height:230px}.chartjs-box canvas{display:block!important;width:100%!important;height:100%!important}
+  .chart-powered{display:inline-flex;align-items:center;gap:5px;margin-left:8px;padding:2px 7px;border-radius:999px;background:#f1edff;color:#5925dc;font-size:8.5px;font-weight:750;letter-spacing:.04em;vertical-align:middle}
+  .chart-powered::before{content:'';width:5px;height:5px;border-radius:50%;background:#6246ea;box-shadow:0 0 0 3px rgba(98,70,234,.12)}
+  @media(max-width:900px){.hero-art{width:250px;min-width:230px}.hero{padding:22px}.kpis{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:680px){.hero{min-height:auto;align-items:flex-start}.hero-art{width:100%;min-width:0;height:130px}.hero-art svg{height:135px}h1{font-size:25px}.kpis{grid-template-columns:repeat(2,1fr)}}
+</style></head>
+<body>
+<header class="hero">
+  <div class="hero-copy">
+    <div class="eyebrow">Satun Provincial Health Analytics</div>
+    <h1>ศูนย์วิเคราะห์ PHR Masks <span class="tag">LIVE DATA</span></h1>
+    <div class="sub">มองเห็นแนวโน้มการใช้งาน การตอบกลับ และคุณภาพข้อมูลของหน่วยบริการได้ในหน้าจอเดียว</div>
+    <div class="hero-meta"><div class="live-status"><span class="live-dot"></span>ข้อมูลพร้อมวิเคราะห์</div><span class="light-badge">☀️ Light dashboard</span></div>
+  </div>
+  <div class="hero-art" aria-hidden="true">
+    <svg viewBox="0 0 320 160" role="img">
+      <path d="M38 126C20 101 29 59 62 39c29-18 72-24 105-9 28 13 39 5 71 11 37 7 59 36 50 66-9 31-43 40-81 38l-98 2c-32 0-56-2-71-21Z" fill="rgba(255,255,255,.52)"/>
+      <g class="float-a">
+        <rect x="91" y="34" width="130" height="103" rx="20" fill="#fff" stroke="#171720" stroke-width="1.5"/>
+        <path d="M91 56a20 20 0 0 1 20-20h90a20 20 0 0 1 20 20v9H91Z" fill="#c1b0ff"/>
+        <circle cx="111" cy="50" r="4" fill="#fc7981"/><circle cx="124" cy="50" r="4" fill="#f8cc65"/><circle cx="137" cy="50" r="4" fill="#84e7a5"/>
+        <rect x="107" y="77" width="25" height="19" rx="5" fill="#e9e3ff"/><rect x="143" y="77" width="25" height="19" rx="5" fill="#dff7ff"/><rect x="179" y="77" width="25" height="19" rx="5" fill="#e5f8dc"/>
+        <rect x="107" y="106" width="25" height="19" rx="5" fill="#fff0bf"/><rect x="143" y="106" width="25" height="31" rx="6" fill="#6246ea"/><rect x="179" y="106" width="25" height="19" rx="5" fill="#ffdfe5"/>
+        <path d="M155.5 113v17M147 121.5h17" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+      </g>
+      <g class="float-b">
+        <circle cx="67" cy="60" r="27" fill="#fc7981" stroke="#171720" stroke-width="1.4"/>
+        <path d="M53 58c0-8 10-11 14-4 4-7 14-4 14 4 0 9-14 17-14 17S53 67 53 58Z" fill="#fff"/>
+        <path d="M45 83h32" stroke="#171720" stroke-width="1.3" stroke-linecap="round" opacity=".25"/>
+      </g>
+      <g class="float-c">
+        <rect x="226" y="28" width="62" height="48" rx="14" fill="#f8cc65" stroke="#171720" stroke-width="1.4"/>
+        <path d="M241 59V49M253 59V42M265 59V47M277 59V37" stroke="#171720" stroke-width="4" stroke-linecap="round"/>
+        <text x="238" y="69" class="clip-label">PHR DATA</text>
+      </g>
+      <g class="float-b">
+        <rect x="227" y="91" width="72" height="45" rx="15" fill="#84e7a5" stroke="#171720" stroke-width="1.4"/>
+        <circle cx="248" cy="108" r="8" fill="#fff"/><circle cx="277" cy="108" r="8" fill="#fff"/>
+        <path d="M235 128c2-9 9-14 17-14s15 5 17 14M265 128c2-8 8-13 15-13s13 5 15 13" fill="#fff" opacity=".95"/>
+      </g>
+      <path d="M49 119c11-8 21-8 31 0" stroke="#6246ea" stroke-width="3" stroke-linecap="round" stroke-dasharray="3 7"/>
+      <circle cx="48" cy="128" r="5" fill="#3bd3fd"/><circle cx="304" cy="73" r="5" fill="#c1b0ff"/><path d="M294 144h13M300.5 137.5v13" stroke="#fc7981" stroke-width="3" stroke-linecap="round"/>
+    </svg>
+  </div>
+</header>
+
+<div class="filterbar">
+  <div class="controls">
+    <span class="filter-label">📍 พื้นที่</span>
+    <span id="distPills"></span>
+  </div>
+  <div class="controls">
+    <span class="filter-label">📅 ช่วงวัน</span>
+    <span id="dayChips"></span>
+  </div>
+  <span class="light-badge">✨ Health Bento</span>
+</div>
+
+<div class="grid kpis" id="kpiBox"></div>
+
+<div class="card">
+  <h2 class="am">🕒 มิติเวลา 1 — แนวโน้ม Masks &amp; ประชาชน <span class="chart-powered">Chart.js</span></h2>
+  <div class="chartbox" id="trendChart"></div>
+  <div class="legend"><span style="color:var(--accent)">■ Masks (visit)</span><span style="color:var(--green)">■ ประชาชน</span></div>
+</div>
+
+<div class="grid row">
+  <div class="card">
+    <h2>📊 มิติเวลา 2 — ส่วนต่าง Masks รายวัน (net change) <span class="chart-powered">Chart.js</span></h2>
+    <div class="chartbox" id="netChart"></div>
+    <div class="legend"><span style="color:var(--green)">■ เพิ่ม</span><span style="color:var(--red)">■ ลด</span></div>
+  </div>
+  <div class="card">
+    <h2 class="g">🗺️ มิติอำเภอ — สัดส่วน Masks รายวัน (Stacked) <span class="chart-powered">Chart.js</span></h2>
+    <div class="chartbox" id="stackChart"></div>
+    <div class="legend" id="stackLegend"></div>
+  </div>
+</div>
+
+<div class="grid row">
+  <div class="card">
+    <h2 class="p">📐 มิติหน่วย 1 — Pareto Top 8 (สัดส่วนการมีส่วนร่วม &amp; การสะสม) <span class="chart-powered">Chart.js</span></h2>
+    <div class="chartbox" id="paretoChart"></div>
+  </div>
+  <div class="card">
+    <h2 class="g">🚀 มิติหน่วย 2 — Momentum (หน่วยที่เติบโตสะสม) <span class="chart-powered">Chart.js</span></h2>
+    <div class="chartbox" id="momChart"></div>
+  </div>
+</div>
+
+<div class="card">
+  <h2 class="am">⚖️ มิติคุณภาพ — อัตราส่วน Masks / ประชาชน (Top 8) <span class="chart-powered">Chart.js</span></h2>
+  <div class="chartbox" id="ratioChart"></div>
+</div>
+
+<div class="card">
+  <h2>💬 มิติ "ตอบกลับ" (answered) — การตอบกลับประชาชนรายวัน <span class="chart-powered">Chart.js</span></h2>
+  <div class="chartbox" id="ansChart"></div>
+  <div class="legend"><span style="color:var(--accent)">■ การเข้าเยี่ยม (encounters)</span><span style="color:var(--green)">■ ตอบกลับ (answered)</span></div>
+  <div class="insight a" id="ansInsight"></div>
+</div>
+
+<div class="card">
+  <h2 class="g">🗂️ มิติอำเภอ — สรุปรวม Masks รายอำเภอ</h2>
+  <div id="distSum"></div>
+</div>
+
+<div class="card">
+  <h2>📋 รายงานรายวัน — หน่วยที่มียอดเพิ่ม/ใหม่/ลด ในแต่ละวัน</h2>
+  <div class="controls" id="reportNav"></div>
+  <div id="dailyReport"></div>
+</div>
+
+<div class="card">
+  <h2>🏷️ ตารางส่วนต่างรายหน่วย (masks) — วัน×หน่วย</h2>
+  <div class="controls">
+    <input class="search" id="unitSearch" placeholder="🔍 ค้นหาชื่อหน่วย/อำเภอ...">
+  </div>
+  <div class="scroll">
+    <table id="unitTable"><thead></thead><tbody></tbody></table>
+  </div>
+  <div class="legend">
+    <span><b class="c-base">n</b> ค่าฐานวันแรก</span>
+    <span><b class="c-up">+n</b> เพิ่ม</span><span><b class="c-new">ใหม่</b> ปรากฏวันนั้น</span>
+    <span><b class="c-flat">0</b> คงที่</span><span><b class="c-down">−n</b> ลดลง</span>
+  </div>
+</div>
+
+<div class="card">
+  <h2>💡 สรุปข้อวิเคราะห์ (Insights)</h2>
+  <div class="insight"><b>1. จังหวะการเปลี่ยนแปลง:</b> เริ่ม 116 → ล่าสุด 118 (+2, โต 1.7%) โดยเปลี่ยนรายวัน +2, +5 และ −5 ตามลำดับ</div>
+  <div class="insight a"><b>2. ศูนย์กลางข้อมูล:</b> อำเภอละงูมียอดล่าสุดสูงสุด 64 Masks ตามด้วยเมืองสตูล 34 Masks จึงควรติดตามการกระจุกตัวใน 2 พื้นที่หลัก</div>
+  <div class="insight g"><b>3. ฐานประชาชน:</b> ประชาชนเพิ่มจาก 48 → 53 (+5 หรือ 10.4%) ขณะที่ Masks เพิ่มสุทธิ 2 ทำให้อัตราส่วนล่าสุดอยู่ที่ 2.23</div>
+  <div class="insight" id="ins4"><b>4. คุณภาพและตอบกลับ:</b> Match rate 100% · วันล่าสุดตอบกลับ 17/118 (14%)</div>
+  <div class="insight a"><b>5. จุดที่ควรตรวจสอบ:</b> Snapshot ล่าสุดลดลง 5 Masks โดยกำแพง −6, ศรีพิมาน −2 และ รพ.สตูล −2 แม้มีหน่วยใหม่และบางหน่วยเพิ่มขึ้น ควรยืนยันที่มาของการปรับยอด</div>
+</div>
+
+<div id="tip"></div>
+
+<script>/*__CHARTJS__*/</script>
+<script>/*__DATALABELS__*/</script>
+<script>
+/*__DATA__*/
+const DIST_COLORS={'ละงู':'#635bff','เมืองสตูล':'#0a72ef','ควนกาหลง':'#f79009','ควนโดน':'#9b51e0','ทุ่งหว้า':'#12b76a'};
+const state={dist:'all', days:DATA.labels.map((_,i)=>i), theme:'light', sortKey:'name', sortDir:1, search:'', reportDay:-1};
+const tip=document.getElementById('tip');
+function showTip(e,txt){tip.textContent=txt;tip.style.opacity=1;tip.style.left=(e.clientX+12)+'px';tip.style.top=(e.clientY+12)+'px';}
+function hideTip(){tip.style.opacity=0;}
+
+// ---- filtering ----
+function selUnits(){
+  let u=DATA.units;
+  if(state.dist!=='all') u=u.filter(x=>x.dist===state.dist);
+  if(state.search){const s=state.search.toLowerCase();u=u.filter(x=>x.name.toLowerCase().includes(s)||x.dist.toLowerCase().includes(s));}
+  return u;
+}
+function activeIdx(){return state.days.slice().sort((a,b)=>a-b);}
+function totalsFor(units){
+  const idx=activeIdx();
+  const m=idx.map(i=>units.reduce((s,u)=>s+u.masks[i],0));
+  const c=idx.map(i=>units.reduce((s,u)=>s+u.cit[i],0));
+  return {idx,m,c};
+}
+const css=v=>getComputedStyle(document.body).getPropertyValue(v).trim();
+
+const svgns='http://www.w3.org/2000/svg';
+function defsGrad(id,c1,c2){
+  return `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient></defs>`;
+}
+const SVGDEFS=defsGrad('gA',css('--accent'),css('--green'))+defsGrad('gB',css('--green'),'#22c55e')+defsGrad('gC',css('--amber'),'#f59e0b');
+function lineChart(el,labels,series){
+  const w=580,h=240,pad_l=46,pad_b=30,pad_t=18;const pw=w-pad_l-18,ph=h-pad_b-pad_t;
+  const maxv=Math.max(1,...series.flatMap(s=>s.vals));
+  const acc=series[0].color, grc=css('--accent');
+  let s=`<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="xMidYMid meet" style="display:block;filter:drop-shadow(0 4px 10px rgba(15,23,42,.08))">`+SVGDEFS;
+  for(let i=0;i<5;i++){const yy=pad_t+ph*(1-i/4),vv=Math.round(maxv*i/4);
+    s+=`<line x1="${pad_l}" y1="${yy}" x2="${w-18}" y2="${yy}" stroke="${css('--line')}"/>`;
+    s+=`<text x="${pad_l-8}" y="${yy+4}" font-size="10" fill="${css('--mut')}" text-anchor="end">${vv}</text>`;}
+  const n=labels.length,gw=pw/n;
+  series.forEach((se,si)=>{
+    let pts='';
+    labels.forEach((lab,gi)=>{const cx=pad_l+gi*gw+gw/2,yy=pad_t+ph*(1-se.vals[gi]/maxv);pts+=`${cx},${yy} `;});
+    s+=`<polyline points="${pts}" fill="none" stroke="${se.color}" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>`;
+    labels.forEach((lab,gi)=>{const cx=pad_l+gi*gw+gw/2,yy=pad_t+ph*(1-se.vals[gi]/maxv);
+      s+=`<circle cx="${cx}" cy="${yy}" r="4.5" fill="${se.color}" stroke="var(--card)" stroke-width="2"/>`;
+      s+=`<text x="${cx}" y="${yy-10}" font-size="11" font-weight="700" fill="var(--txt)" text-anchor="middle">${se.vals[gi]}</text>`;
+      s+=`<text x="${cx}" y="${h-10}" font-size="10.5" fill="var(--mut)" text-anchor="middle">${lab}</text>`;});
+  });
+  s+='</svg>';el.innerHTML=s;
+}
+function barChart(el,labels,vals){
+  const w=560,h=210,pad_l=40,pad_b=30,pad_t=22;const pw=w-pad_l-18,ph=h-pad_b-pad_t;
+  const maxv=Math.max(1,...vals.map(Math.abs));
+  let s=`<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="xMidYMid meet" style="display:block;filter:drop-shadow(0 4px 10px rgba(15,23,42,.08))">${SVGDEFS}`;
+  for(let i=0;i<5;i++){const yy=pad_t+ph*(1-i/4),vv=Math.round(maxv*i/4);
+    s+=`<line x1="${pad_l}" y1="${yy}" x2="${w-18}" y2="${yy}" stroke="${css('--line')}"/>`;
+    s+=`<text x="${pad_l-7}" y="${yy+4}" font-size="10" fill="${css('--mut')}" text-anchor="end">${vv}</text>`;}
+  const n=vals.length,gw=pw/n,bw=Math.min(64,gw-22);
+  labels.forEach((lab,gi)=>{const cx=pad_l+gi*gw+gw/2,val=vals[gi];
+    const bh=ph*(Math.abs(val)/maxv),by=pad_t+ph-(val>0?bh:0);
+    const c=val>0?'url(#gA)':(val<0?css('--red'):css('--mut'));
+    s+=`<rect class="bar" data-tip="${lab}: ${val>=0?'+':''}${val}" x="${cx-bw/2}" y="${by}" width="${bw}" height="${Math.max(bh,2)}" rx="5" fill="${c}"/>`;
+    s+=`<text x="${cx}" y="${by-7}" font-size="12" font-weight="700" fill="var(--txt)" text-anchor="middle">${val>=0?'+':''}${val}</text>`;
+    s+=`<text x="${cx}" y="${h-11}" font-size="10.5" fill="var(--mut)" text-anchor="middle">${lab}</text>`;});
+  s+='</svg>';el.innerHTML=s;attachTips(el);
+}
+function hbar(el,items){
+  const w=560,row=30,lw=190,pad_t=6;const maxv=Math.max(1,...items.map(i=>i.val));
+  const h=row*items.length+pad_t*2;let s=`<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="xMinYMin meet" style="display:block;filter:drop-shadow(0 3px 8px rgba(15,23,42,.08))">${SVGDEFS}`;
+  let y=pad_t;
+  items.forEach(it=>{const bw=(w-lw-66)*(it.val/maxv);
+    s+=`<text x="0" y="${y+row/2}" font-size="11.5" fill="var(--txt)" dominant-baseline="middle">${it.name}</text>`;
+    s+=`<rect x="${lw}" y="${y+5}" width="${w-lw-66}" height="${row-12}" rx="7" fill="${css('--line')}" opacity="0.5"/>`;
+    s+=`<rect class="bar" data-tip="${it.name}: ${it.val}${it.extra||''}" x="${lw}" y="${y+5}" width="${Math.max(bw,3)}" height="${row-12}" rx="7" fill="${it.color}"/>`;
+    s+=`<text x="${lw+Math.max(bw,3)+8}" y="${y+row/2}" font-size="11.5" fill="var(--txt)" dominant-baseline="middle" font-weight="700">${it.val}${it.suffix||''} ${it.extra||''}</text>`;
+    y+=row;});
+  s+='</svg>';el.innerHTML=s;attachTips(el);
+}
+function stacked(el,labels,distData){
+  const w=560,h=240,pad_l=42,pad_b=30,pad_t=18;const pw=w-pad_l-18,ph=h-pad_b-pad_t;
+  const maxv=Math.max(1,...labels.map(l=>DATA.districts.reduce((s,d)=>s+distData[l][d],0)));
+  let s=`<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="xMidYMid meet" style="display:block;filter:drop-shadow(0 4px 10px rgba(15,23,42,.08))">`+SVGDEFS;
+  for(let i=0;i<5;i++){const yy=pad_t+ph*(1-i/4),vv=Math.round(maxv*i/4);
+    s+=`<line x1="${pad_l}" y1="${yy}" x2="${w-18}" y2="${yy}" stroke="${css('--line')}"/>`;
+    s+=`<text x="${pad_l-7}" y="${yy+4}" font-size="10" fill="${css('--mut')}" text-anchor="end">${vv}</text>`;}
+  const n=labels.length,gw=pw/n;
+  labels.forEach((lab,gi)=>{const cx=pad_l+gi*gw+gw/2;let y=pad_t+ph;
+    DATA.districts.forEach(d=>{const val=distData[lab][d];if(val===0)return;const col=DIST_COLORS[d]||'#94a3b8';
+      const dim=(state.dist!=='all'&&state.dist!==d)?0.22:1;const bh=ph*(val/maxv);y-=bh;
+      s+=`<rect class="bar" data-tip="${lab} ${d}: ${val}" x="${cx-28}" y="${y}" width="56" height="${bh}" fill="${col}" opacity="${dim}"/>`;});
+    s+=`<text x="${cx}" y="${h-11}" font-size="10.5" fill="var(--mut)" text-anchor="middle">${lab}</text>`;});
+  s+='</svg>';el.innerHTML=s;attachTips(el);
+}
+function attachTips(el){el.querySelectorAll('.bar').forEach(b=>{
+  b.addEventListener('mousemove',e=>showTip(e,b.dataset.tip));
+  b.addEventListener('mouseleave',hideTip);});}
+
+// ---- Chart.js 4.5.1 + DataLabels 2.2.0 modules ----
+Chart.register(ChartDataLabels);
+Chart.defaults.font.family="-apple-system,BlinkMacSystemFont,'Noto Sans Thai','Leelawadee UI','Segoe UI',sans-serif";
+Chart.defaults.color='#6f6b65';
+const CHARTS={};
+const reduceMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function chartTooltip(){return {enabled:true,backgroundColor:'#171720',titleColor:'#fff',bodyColor:'#fff',padding:10,cornerRadius:10,displayColors:true,boxPadding:4,titleFont:{weight:'700'},bodyFont:{size:11},borderColor:'rgba(255,255,255,.12)',borderWidth:1};}
+function chartScales(horizontal=false){
+  const grid={color:'#ece6dc',drawBorder:false,lineWidth:1};
+  const ticks={color:'#77716a',font:{size:10},padding:8};
+  return horizontal?
+    {x:{beginAtZero:true,grid,ticks},y:{grid:{display:false},ticks:{...ticks,color:'#2e2b31',font:{size:10,weight:'600'}}}}:
+    {x:{grid:{display:false},ticks},y:{beginAtZero:true,grid,ticks}};
+}
+function mountChart(el,config,height=250){
+  if(CHARTS[el.id]){CHARTS[el.id].destroy();delete CHARTS[el.id];}
+  el.classList.add('chartjs-box');el.style.height=height+'px';
+  el.innerHTML='<canvas role="img" aria-label="กราฟข้อมูล '+el.id+'"></canvas>';
+  const base={responsive:true,maintainAspectRatio:false,animation:reduceMotion?false:{duration:650,easing:'easeOutQuart'},interaction:{mode:'index',intersect:false},layout:{padding:{top:18,right:10,left:4,bottom:2}},plugins:{legend:{display:false},tooltip:chartTooltip(),datalabels:{display:false}}};
+  config.options={...base,...(config.options||{}),plugins:{...base.plugins,...((config.options&&config.options.plugins)||{})}};
+  CHARTS[el.id]=new Chart(el.querySelector('canvas'),config);
+}
+function lineChart(el,labels,series){
+  const sets=series.map((se,i)=>({label:se.name,data:se.vals,borderColor:se.color,backgroundColor:se.color,borderWidth:3,pointRadius:4,pointHoverRadius:7,pointBackgroundColor:'#fff',pointBorderColor:se.color,pointBorderWidth:3,tension:.34,fill:false}));
+  mountChart(el,{type:'line',data:{labels,datasets:sets},options:{scales:chartScales(false),plugins:{datalabels:{display:true,color:'#171720',align:'top',anchor:'end',offset:2,clamp:true,font:{size:11,weight:'700'},formatter:v=>v},tooltip:{...chartTooltip(),callbacks:{label:c=>`${c.dataset.label}: ${c.formattedValue}`}}}}},270);
+}
+function barChart(el,labels,vals){
+  const colors=vals.map(v=>v>0?'#6246ea':v<0?'#e84d5b':'#a6a19a');
+  mountChart(el,{type:'bar',data:{labels,datasets:[{label:'ส่วนต่าง Masks',data:vals,backgroundColor:colors,borderColor:colors,borderWidth:1,borderRadius:9,borderSkipped:false,maxBarThickness:58}]},options:{scales:chartScales(false),plugins:{datalabels:{display:true,color:'#171720',anchor:'end',align:'end',font:{size:11,weight:'700'},formatter:v=>(v>0?'+':'')+v},tooltip:{...chartTooltip(),callbacks:{label:c=>`เปลี่ยนแปลง: ${c.raw>0?'+':''}${c.raw}`}}}}},240);
+}
+function hbar(el,items){
+  const height=Math.max(230,Math.min(500,items.length*35+50));
+  const labels=items.map(i=>i.name),vals=items.map(i=>i.val),colors=items.map((i,n)=>['#6246ea','#246bfd','#078a52','#f0a202','#e84d5b','#9a62db'][n%6]);
+  mountChart(el,{type:'bar',data:{labels,datasets:[{label:'ค่า',data:vals,backgroundColor:colors,borderRadius:8,borderSkipped:false,barThickness:16}]},options:{indexAxis:'y',layout:{padding:{top:6,right:88,left:2,bottom:2}},scales:chartScales(true),plugins:{datalabels:{display:true,color:'#171720',anchor:'end',align:'right',clamp:true,font:{size:10,weight:'700'},formatter:(v,c)=>`${v} ${items[c.dataIndex].extra||''}`},tooltip:{...chartTooltip(),callbacks:{label:c=>`${c.raw} ${items[c.dataIndex].extra||''}`}}}}},height);
+}
+function stacked(el,labels,distData){
+  const datasets=DATA.districts.map(d=>({label:d,data:labels.map(l=>distData[l][d]),backgroundColor:DIST_COLORS[d]||'#9ca3af',borderColor:'#fff',borderWidth:1,borderRadius:4,borderSkipped:false}));
+  mountChart(el,{type:'bar',data:{labels,datasets},options:{scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:10},color:'#77716a'}},y:{stacked:true,beginAtZero:true,grid:{color:'#ece6dc'},ticks:{font:{size:10},color:'#77716a'}}},plugins:{datalabels:{display:false},tooltip:{...chartTooltip(),callbacks:{label:c=>`${c.dataset.label}: ${c.raw}`}}}}},240);
+}
+
+// ---- renderers ----
+const KI={
+  masks:`<span class="kico"><svg viewBox="0 0 24 24"><path d="M3 12h4l2.2-5 4.1 10 2.3-5H21"/><circle cx="12" cy="12" r="9" opacity=".28"/></svg></span>`,
+  trend:`<span class="kico"><svg viewBox="0 0 24 24"><path d="m4 17 5-5 4 3 7-8"/><path d="M15 7h5v5"/></svg></span>`,
+  speed:`<span class="kico"><svg viewBox="0 0 24 24"><path d="M13 2 5 13h6l-1 9 9-13h-6Z"/></svg></span>`,
+  hospital:`<span class="kico"><svg viewBox="0 0 24 24"><path d="M5 21V5h14v16M3 21h18M9 9h6M12 6v6M9 15h2M14 15h2M10 21v-3h4v3"/></svg></span>`,
+  ratio:`<span class="kico"><svg viewBox="0 0 24 24"><path d="M12 3v18M5 7h14M5 7l-3 6h6L5 7ZM19 7l-3 6h6l-3-6Z"/></svg></span>`,
+  shield:`<span class="kico"><svg viewBox="0 0 24 24"><path d="M12 3 4.5 6v5.5c0 4.8 3.2 8 7.5 9.5 4.3-1.5 7.5-4.7 7.5-9.5V6Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></svg></span>`
+};
+function renderKPI(){
+  const u=selUnits();const {idx,m,c}=totalsFor(u);
+  const last=m[m.length-1]||0,first=m[0]||0;
+  const net=last-first;
+  let g=0,cnt=0;for(let i=1;i<idx.length;i++){const base=m[i-1]||1;g+=100*(m[i]-base)/base;cnt++;}
+  const avg=cnt?Math.round(g/cnt*10)/10:0;
+  const lastIdx=idx[idx.length-1];
+  const present=u.filter(x=>x.masks[lastIdx]>0).length;
+  const ratio=(c[c.length-1])?(Math.round(last/c[c.length-1]*100)/100):0;
+  const box=document.getElementById('kpiBox');
+  box.innerHTML=`
+   <div class="kpi"><div class="kpi-top">${KI.masks}<span class="kmini">MASKS</span></div><div class="v a">${last}</div><div class="l">รวม${state.dist!=='all'?' · '+state.dist:''} · ${DATA.labels[lastIdx]}</div></div>
+   <div class="kpi"><div class="kpi-top">${KI.trend}<span class="kmini">DELTA</span></div><div class="v g">${net>=0?'+':''}${net}</div><div class="l">เพิ่มขึ้นสุทธิในช่วงที่เลือก</div></div>
+   <div class="kpi"><div class="kpi-top">${KI.speed}<span class="kmini">GROWTH</span></div><div class="v a">${avg}%</div><div class="l">อัตราเติบโตเฉลี่ยต่อวัน</div></div>
+   <div class="kpi"><div class="kpi-top">${KI.hospital}<span class="kmini">UNITS</span></div><div class="v">${present}</div><div class="l">หน่วยบริการที่มีข้อมูลล่าสุด</div></div>
+   <div class="kpi"><div class="kpi-top">${KI.ratio}<span class="kmini">RATIO</span></div><div class="v am">${ratio}</div><div class="l">Masks ต่อประชาชนโดยรวม</div></div>
+   <div class="kpi"><div class="kpi-top">${KI.shield}<span class="kmini">QUALITY</span></div><div class="v">100%</div><div class="l">ข้อมูลจับคู่สำเร็จทุกหน่วย</div></div>`;
+}
+function renderTrend(){
+  const u=selUnits();const {idx,m,c}=totalsFor(u);
+  const labs=idx.map(i=>DATA.labels[i]);
+  lineChart(document.getElementById('trendChart'),labs,[{name:'Masks',color:css('--accent'),vals:m},{name:'ประชาชน',color:css('--green'),vals:c}]);
+}
+function renderNet(){
+  const u=selUnits();const {idx,m}=totalsFor(u);
+  const deltas=[];for(let i=1;i<idx.length;i++)deltas.push(m[i]-m[i-1]);
+  const labs=idx.slice(1).map(i=>DATA.labels[i]);
+  barChart(document.getElementById('netChart'),labs,deltas);
+}
+function renderStack(){
+  const idx=activeIdx();const labs=idx.map(i=>DATA.labels[i]);
+  stacked(document.getElementById('stackChart'),labs,DATA.distDay);
+  // สรุปรวมรายอำเภอ (แทนตารางที่ซ้ำกับกราฟ)
+  let rows=DATA.districts.map(d=>{
+    const per=idx.map(i=>DATA.distDay[DATA.labels[i]][d]);
+    const tot=per.reduce((a,b)=>a+b,0);
+    return {d,per,tot};
+  }).sort((a,b)=>b.tot-a.tot);
+  let html='<div class="dsumwrap"><table><thead><tr><th>อำเภอ</th>'+
+    labs.map(l=>`<th>${l}</th>`).join('')+'<th>รวม</th></tr></thead><tbody>';
+  rows.forEach(r=>{const dim=(state.dist!=='all'&&state.dist!==r.d)?'opacity:.45':'';
+    html+=`<tr style="${dim}"><td>${r.d}</td>${r.per.map(v=>`<td class="num">${v}</td>`).join('')}<td class="num strong">${r.tot}</td></tr>`;});
+  html+='</tbody></table></div>';
+  document.getElementById('distSum').innerHTML=html;
+}
+function renderPareto(){
+  const u=selUnits();const lastIdx=activeIdx().slice(-1)[0];
+  const ranked=u.map(x=>({x,v:x.masks[lastIdx]})).sort((a,b)=>b.v-a.v);
+  const tot=ranked.reduce((s,o)=>s+o.v,0)||1;
+  let cum=0;const items=ranked.slice(0,8).map(o=>{cum+=o.v;
+    return {name:o.x.name,val:o.v,extra:`(${Math.round(100*cum/tot)}%)`,color:'url(#gA)',suffix:''};});
+  hbar(document.getElementById('paretoChart'),items);
+}
+function renderMom(){
+  const u=selUnits();const idx=activeIdx();
+  const items=u.map(x=>{const f=x.masks[idx[0]],l=x.masks[idx[idx.length-1]];
+    return {x,f,l,d:l-f};}).filter(o=>o.d>0).sort((a,b)=>b.d-a.d)
+    .map(o=>({name:o.x.name,val:o.d,extra:`(${o.f}→${o.l})`,color:'url(#gB)',suffix:''}));
+  if(!items.length){document.getElementById('momChart').innerHTML='<div class="mut">ไม่มีหน่วยใดเพิ่มขึ้นในช่วงที่เลือก</div>';return;}
+  hbar(document.getElementById('momChart'),items);
+}
+function renderRatio(){
+  const u=selUnits();const lastIdx=activeIdx().slice(-1)[0];
+  const items=u.map(x=>({x,r:(x.cit[lastIdx]?Math.round(x.masks[lastIdx]/x.cit[lastIdx]*100)/100:0),m:x.masks[lastIdx],c:x.cit[lastIdx]}))
+    .sort((a,b)=>b.r-a.r).slice(0,8)
+    .map(o=>({name:o.x.name,val:o.r,extra:`(${o.m}/${o.c})`,color:'url(#gC)',suffix:''}));
+  hbar(document.getElementById('ratioChart'),items);
+}
+function renderAns(){
+  // สรุปรวม answered ต่อวัน (เฉพาะวันที่มีคอลัมน์ answered ในไฟล์)
+  const idx=activeIdx();
+  const labs=idx.map(i=>DATA.labels[i]);
+  const enc=idx.map(i=>DATA.totEnc[i]||0);
+  const ans=idx.map(i=>DATA.totAns[i]||0);
+  lineChart(document.getElementById('ansChart'),labs,[{name:'encounters',color:css('--accent'),vals:enc},{name:'answered',color:css('--green'),vals:ans}]);
+  const lastIdx=idx[idx.length-1];
+  const tEnc=DATA.totEnc[lastIdx]||0, tAns=DATA.totAns[lastIdx]||0;
+  const rate=tEnc?Math.round(tAns/tEnc*100):0;
+  document.getElementById('ansInsight').innerHTML=`<b>สรุปวันล่าสุด (${DATA.labels[lastIdx]}):</b> ตอบกลับ ${tAns} จาก ${tEnc} การเข้าเยี่ยม (${rate}%) · หน่วยที่ตอบกลับ: ${DATA.units.filter(u=>u.ans[lastIdx]>0).length}/${DATA.units.filter(u=>u.enc[lastIdx]>0||u.masks[lastIdx]>0).length} แห่ง`;
+  const ins4=document.getElementById('ins4');
+  if(ins4)ins4.innerHTML=`<b>4. คุณภาพและตอบกลับ:</b> Match rate 100% ตลอด 4 วัน · วันล่าสุดตอบกลับ ${tAns}/${tEnc} (${rate}%)`;
+}
+function renderUnitTable(){
+  let u=selUnits().slice();
+  const k=state.sortKey,dir=state.sortDir;
+  u.sort((a,b)=>{
+    if(k==='name')return dir*a.name.localeCompare(b.name,'th');
+    if(k==='dist')return dir*a.dist.localeCompare(b.dist,'th');
+    if(k==='last')return dir*(a.last-b.last);
+    return 0;
+  });
+  const head=['หน่วยบริการ','อำเภอ',...DATA.labels,'ล่าสุด','ตอบกลับ'].map((h,i)=>{
+    const arr=state.sortKey===colName(i)?' <span class="arr">'+(state.sortDir>0?'▲':'▼')+'</span>':'';
+    return '<th data-col="'+i+'">'+h+arr+'</th>';
+  }).join('');
+  document.querySelector('#unitTable thead').innerHTML='<tr>'+head+'</tr>';
+  const lastIdx=activeIdx().slice(-1)[0];
+  const rows=u.map(x=>{
+    const idx=activeIdx();
+    let cells='';
+    idx.forEach(i=>{
+      let txt,cls;
+      if(i===idx[0]){txt=x.masks[i];cls='c-base';}
+      else{const dm=x.masks[i]-(x.masks[i-1]||0);
+        if(x.masks[i]&&!x.masks[i-1]){txt='+'+x.masks[i];cls='c-new';}
+        else if(dm>0){txt='+'+dm;cls='c-up';}
+        else if(dm<0){txt=''+dm;cls='c-down';}
+        else{txt='0';cls='c-flat';}}
+      cells+='<td class="num '+cls+'">'+txt+'</td>';
+    });
+    const an=x.ans[lastIdx]||0;
+    return '<tr><td>'+x.name+'</td><td class="mut">'+x.dist+'</td>'+cells+
+      '<td class="num strong">'+x.last+'</td>'+
+      '<td class="num '+(an>0?'c-up':'c-flat')+'">'+an+'</td></tr>';
+  }).join('');
+  document.querySelector('#unitTable tbody').innerHTML=rows;
+  document.querySelectorAll('#unitTable th').forEach(th=>{
+    th.onclick=()=>{const i=+th.dataset.col;const name=colName(i);
+      if(state.sortKey===name)state.sortDir*=-1;else{state.sortKey=name;state.sortDir=1;}
+      renderUnitTable();};
+  });
+}
+function colName(i){if(i===0)return 'name';if(i===1)return 'dist';
+  const idx=activeIdx();if(i-2<idx.length)return 'day';return 'last';}
+
+// ---- daily increase report ----
+function buildReportNav(){
+  const nav=document.getElementById('reportNav');
+  const idx=activeIdx();
+  // ปุ่ม "ทุกวัน" + ปุ่มแต่ละวัน (ยกเว้นวันแรกที่เป็นฐาน)
+  const mk=(label,dayI,on)=>{const b=document.createElement('span');b.className='pill'+(on?' on':'');b.textContent=label;
+    b.onclick=()=>{state.reportDay=dayI;document.querySelectorAll('#reportNav .pill').forEach(p=>p.classList.remove('on'));b.classList.add('on');renderReport();};
+    nav.appendChild(b);};
+  mk('📆 ทุกวัน',-1,true);
+  idx.slice(1).forEach(i=>mk(DATA.labels[i],i,false));
+  state.reportDay=-1;
+}
+function renderReport(){
+  const idx=activeIdx();
+  const daySel=state.reportDay;
+  const days=[daySel>=0?daySel:idx[idx.length-1]]; // ทุกวัน = วันสุดท้าย; หรือระบุวัน
+  if(daySel<0) days.length=0, idx.slice(1).forEach(i=>days.push(i));
+  const targetDays=daySel<0?idx.slice(1):[daySel];
+  let html='';
+  targetDays.forEach(di=>{
+    const prev=di-1;
+    const up=[],neu=[],down=[];
+    DATA.units.forEach(u=>{
+      const cur=u.masks[di], pv=(di>0)?(u.masks[prev]||0):0;
+      if(di===0){if(cur>0)neu.push(u);return;}
+      if(cur && !pv){neu.push(u);}
+      else{const d=cur-pv; if(d>0)up.push([u,d]); else if(d<0)down.push([u,-d]);}
+    });
+    up.sort((a,b)=>b[1]-a[1]);
+    const dateLabel=DATA.labels[di];
+    html+=`<div class="rep-day"><div class="rep-head">📅 ${dateLabel}</div>`;
+    html+=repList('🟢 เพิ่มขึ้น',up.map(([u,d])=>`${u.name} <b>+${d}</b> (เป็น ${u.masks[di]})`),'c-up','ไม่มีหน่วยเพิ่มขึ้น');
+    html+=repList('🟠 ใหม่',neu.map(u=>`${u.name} <b>+${u.masks[di]}</b> (ปรากฏครั้งแรก)`),'c-new','ไม่มีหน่วยใหม่');
+    html+=repList('🔴 ลดลง',down.map(([u,d])=>`${u.name} <b>−${d}</b> (เหลือ ${u.masks[di]})`),'c-down','ไม่มีหน่วยลดลง');
+    html+=`</div>`;
+  });
+  document.getElementById('dailyReport').innerHTML=html;
+}
+function repList(title,items,cls,empty){
+  let s=`<div class="rep-sec"><span class="rep-badge ${cls}">${title}</span>`;
+  if(!items.length)s+=`<span class="rep-empty">${empty}</span>`;
+  else items.forEach(t=>s+=`<span class="rep-item">${t}</span>`);
+  s+='</div>';return s;
+}
+
+// ---- controls ----
+function buildControls(){
+  const dp=document.getElementById('distPills');
+  ['all',...DATA.districts].forEach(d=>{
+    const b=document.createElement('span');b.className='pill'+(d==='all'?' on':'');
+    b.textContent=d==='all'?'ทั้งหมด':d;b.dataset.d=d;
+    b.onclick=()=>{state.dist=d;document.querySelectorAll('#distPills .pill').forEach(p=>p.classList.remove('on'));b.classList.add('on');renderAll();};
+    dp.appendChild(b);
+  });
+  const dc=document.getElementById('dayChips');
+  DATA.labels.forEach((l,i)=>{const b=document.createElement('span');b.className='chip on';b.textContent=l;b.dataset.i=i;
+    b.onclick=()=>{const k=state.days.indexOf(i);if(k>=0){if(state.days.length>1){state.days.splice(k,1);b.classList.remove('on');}}else{state.days.push(i);b.classList.add('on');}
+      renderAll();};
+    dc.appendChild(b);
+  });
+  document.getElementById('unitSearch').oninput=e=>{state.search=e.target.value;renderUnitTable();};
+  // stack legend
+  document.getElementById('stackLegend').innerHTML=DATA.districts.map(d=>`<span style="color:${DIST_COLORS[d]||'#94a3b8'}">■ ${d}</span>`).join('');
+  buildReportNav();
+}
+function renderAll(){renderKPI();renderTrend();renderNet();renderStack();renderPareto();renderMom();renderRatio();renderAns();renderUnitTable();renderReport();}
+buildControls();renderAll();
+</script>
+</body></html>"""
+
+VENDOR = os.path.join(BASE_DIR, "vendor")
+with open(os.path.join(VENDOR, "chart.umd.min.js"), encoding="utf-8") as f:
+    chartjs_src = f.read()
+with open(os.path.join(VENDOR, "chartjs-plugin-datalabels.min.js"), encoding="utf-8") as f:
+    datalabels_src = f.read()
+
+html = (TEMPLATE
+        .replace("/*__CHARTJS__*/", chartjs_src)
+        .replace("/*__DATALABELS__*/", datalabels_src)
+        .replace("/*__DATA__*/", data_js))
+OUT = os.environ.get("PHR_DASHBOARD_OUT", os.path.join(BASE_DIR, "index.html"))
+with open(OUT, "w", encoding="utf-8") as f:
+    f.write(html)
+print("units:", len(unit_recs), "| districts:", districts, "| OUT:", OUT)
