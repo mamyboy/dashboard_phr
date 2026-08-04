@@ -170,6 +170,7 @@
   .clip-label{font-size:9px;font-weight:750;letter-spacing:.08em;text-transform:uppercase;fill:#43089f}
   html,body{width:100%;max-width:100%;overflow-x:clip}.grid,.card,.chartbox,.chartjs-box{min-width:0}
   .chartjs-box{position:relative;width:100%;min-height:230px;overflow:visible}.chart-stage{position:relative;width:100%;height:100%}.chartjs-box canvas{display:block!important;width:100%!important;height:100%!important;max-width:100%}
+  .mobile-category-key{display:none}
   .chart-powered{display:inline-flex;align-items:center;gap:5px;margin-left:8px;padding:2px 7px;border-radius:999px;background:#f1edff;color:#5925dc;font-size:8.5px;font-weight:750;letter-spacing:.04em;vertical-align:middle}
   .chart-powered::before{content:'';width:5px;height:5px;border-radius:50%;background:#6246ea;box-shadow:0 0 0 3px rgba(98,70,234,.12)}
   .icd-zone{margin:14px 0;padding:12px;border:1px solid #cfdcf8;border-radius:24px;background:linear-gradient(145deg,#edf4ff 0%,#f7f3ff 48%,#ecfbf4 100%);box-shadow:0 6px 0 #dbe5f6}
@@ -192,6 +193,7 @@
     .kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.kpi{min-height:102px;padding:11px;border-radius:15px}.kpi .v{font-size:25px}.kpi .l{font-size:10px}.kpi-top{margin-bottom:7px}
     .card{padding:12px 10px;border-radius:16px;margin-bottom:10px}.card h2{font-size:12px;min-height:0;margin-bottom:9px;padding-bottom:9px;flex-wrap:wrap}.card h2::after{display:none}.chart-powered{margin-left:0;font-size:8px}
     .chartjs-box.chart-horizontal{overflow:hidden;padding-bottom:0;-webkit-overflow-scrolling:auto;overscroll-behavior-inline:auto}.chartjs-box.chart-horizontal .chart-stage{width:100%;min-width:0}
+    .mobile-category-key{display:grid;grid-template-columns:1fr;gap:4px;list-style:none;margin:7px 0 2px;padding:8px;border:1px dashed #ddd4c8;border-radius:10px;background:#fffdf8}.mobile-category-key li{display:grid;grid-template-columns:22px minmax(0,1fr);gap:6px;align-items:start;font-size:10px;line-height:1.35;color:#4d4842}.mobile-category-key b{display:grid;place-items:center;width:20px;height:20px;border-radius:6px;background:#eeeaff;color:#6246ea;font-size:9px}.mobile-category-key span{overflow-wrap:anywhere}
     .legend{font-size:9.5px;gap:7px 10px;margin-top:8px;padding-top:8px}.legend span{white-space:normal}.insight{font-size:11px;padding:9px 10px}.rep-day{padding:10px}.rep-sec{align-items:flex-start}.rep-item{white-space:normal;line-height:1.45}
     .search{width:100%;min-width:0;height:44px;font-size:16px}.scroll{border-radius:10px}.dsumwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}.dsumwrap table{min-width:620px}
     .icd-zone{margin:10px 0;padding:7px;border-radius:18px;box-shadow:0 4px 0 #dbe5f6}.icd-hero{padding:12px 10px 8px;gap:10px}.icd-hero h2{font-size:18px}.icd-hero p{font-size:10px}.icd-mark{width:56px;height:56px;border-radius:17px;font-size:15px;box-shadow:4px 4px 0 #98d9c2}.icd-kpis{gap:7px}.icd-kpi{min-height:82px;padding:10px;border-radius:14px}.icd-kpi .val{font-size:22px}.icd-kpi .lab{font-size:8px}.icd-kpi small{font-size:8.5px}.source-note{font-size:9px;line-height:1.45}.icd-unit-card td:nth-child(1){min-width:190px}.icd-unit-card td:nth-child(5){min-width:330px}.prov-zone{padding:11px;border-radius:17px}.prov-head{flex-direction:column;gap:7px}.prov-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.prov-kpi{min-height:82px;padding:10px}.prov-kpi .val{font-size:21px}
@@ -523,7 +525,7 @@ function chartScales(horizontal=false){
   const grid={color:'#ece6dc',drawBorder:false,lineWidth:1};
   const ticks={color:'#77716a',font:{size:p.phone?9:10},padding:p.phone?5:8,maxRotation:0};
   return horizontal?
-    {x:{beginAtZero:true,grace:p.phone?'24%':'16%',grid,ticks:{...ticks,maxTicksLimit:p.phone?5:7}},y:{grid:{display:false},afterFit:axis=>{if(p.phone)axis.width=Math.min(axis.width,118);},ticks:{...ticks,color:'#2e2b31',font:{size:p.phone?8.5:10,weight:'600'},padding:p.phone?4:8}}}:
+    {x:{beginAtZero:true,grace:p.phone?'24%':'16%',grid,ticks:{...ticks,maxTicksLimit:p.phone?5:7}},y:{grid:{display:false},afterFit:axis=>{if(p.phone)axis.width=Math.min(axis.width,32);},ticks:{...ticks,color:'#2e2b31',font:{size:p.phone?9:10,weight:'700'},padding:p.phone?4:8}}}:
     {x:{grid:{display:false},ticks:{...ticks,autoSkip:true,maxTicksLimit:p.phone?4:7}},y:{beginAtZero:true,grid,ticks:{...ticks,maxTicksLimit:p.phone?6:8}}};
 }
 function mountChart(el,config,height=250){
@@ -546,11 +548,19 @@ function barChart(el,labels,vals){
   const colors=vals.map(v=>v>0?'#6246ea':v<0?'#e84d5b':'#a6a19a');
   mountChart(el,{type:'bar',data:{labels:displayLabels,datasets:[{label:'ส่วนต่าง Masks',data:vals,backgroundColor:colors,borderColor:colors,borderWidth:1,borderRadius:p.phone?7:9,borderSkipped:false,maxBarThickness:p.phone?42:58}]},options:{scales:chartScales(false),plugins:{datalabels:{display:true,color:'#171720',anchor:'end',align:'end',clamp:true,font:{size:p.phone?9:11,weight:'700'},formatter:v=>(v>0?'+':'')+v},tooltip:{...chartTooltip(),callbacks:{title:c=>labels[c[0].dataIndex],label:c=>`เปลี่ยนแปลง: ${c.raw>0?'+':''}${c.raw}`}}}}},p.phone?220:240);
 }
+function renderMobileCategoryKey(el,items){
+  const old=document.querySelector(`[data-chart-key="${el.id}"]`);if(old)old.remove();
+  if(!viewportProfile().phone)return;
+  const list=document.createElement('ol');list.className='mobile-category-key';list.dataset.chartKey=el.id;list.setAttribute('aria-label','รายชื่อหมวดหมู่ในกราฟ');
+  items.forEach((item,n)=>{const li=document.createElement('li'),badge=document.createElement('b'),name=document.createElement('span');badge.textContent=String(n+1);name.textContent=item.name;li.append(badge,name);list.appendChild(li);});
+  el.insertAdjacentElement('afterend',list);
+}
 function hbar(el,items){
-  const p=viewportProfile(),maxChars=p.tablet?32:52,labels=items.map(i=>p.phone?compactMobileCategory(i.name):wrapChartLabel(i.name,maxChars));
+  const p=viewportProfile(),maxChars=p.tablet?32:52,labels=items.map((i,n)=>p.phone?String(n+1):wrapChartLabel(i.name,maxChars));
   const maxLines=Math.max(1,...labels.map(l=>Array.isArray(l)?l.length:1)),row=p.phone?29+maxLines*9:(p.tablet?27+maxLines*8:24+maxLines*7),height=Math.max(p.phone?265:230,Math.min(760,items.length*row+50));
   const vals=items.map(i=>i.val),colors=items.map((i,n)=>['#6246ea','#246bfd','#078a52','#f0a202','#e84d5b','#9a62db'][n%6]);
   mountChart(el,{type:'bar',data:{labels,datasets:[{label:'ค่า',data:vals,backgroundColor:colors,borderRadius:p.phone?6:8,borderSkipped:false,barThickness:p.phone?13:16}]},options:{indexAxis:'y',layout:{padding:{top:6,right:p.phone?45:72,left:0,bottom:2}},scales:chartScales(true),plugins:{datalabels:{display:true,color:'#171720',anchor:'end',align:'right',clamp:true,clip:false,font:{size:p.phone?9:10,weight:'700'},formatter:(v,c)=>`${v}${items[c.dataIndex].extra?' '+items[c.dataIndex].extra:''}`},tooltip:{...chartTooltip(),callbacks:{title:c=>items[c[0].dataIndex].name,label:c=>`${c.raw} ${items[c.dataIndex].extra||''}`}}}}},height);
+  renderMobileCategoryKey(el,items);
 }
 function stacked(el,labels,distData){
   const p=viewportProfile(),displayLabels=labels.map(compactDate);
