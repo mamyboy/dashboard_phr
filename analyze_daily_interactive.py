@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Build a self-contained interactive PHR Masks dashboard with Chart.js."""
 import csv, glob, re, os, json
+from dashboard_data import apply_detail_context, build_province_summary, safe_json_for_script
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FOLDER = os.environ.get("PHR_CSV_DIR", os.path.join(BASE_DIR, "csv"))
@@ -30,10 +31,12 @@ def opt(v):
     return int(v) if v not in ("", None) else None
 
 days = []
+province_name = None
 for fn, t, label in days_raw:
     data = {}
     with open(fn, encoding="utf-8-sig") as f:
         for row in csv.DictReader(f):
+            province_name = province_name or (row.get("province_name") or "").strip()
             code = row["hospital_code"].strip()
             name = re.sub(r"\s*อ\.[ก-์]+\s*จ\.[ก-์]+\s*$", "", row["hospital_name"]).strip()
             data[code] = dict(
@@ -42,7 +45,7 @@ for fn, t, label in days_raw:
                 enc=opt(row.get("encounters")),
                 ans=opt(row.get("answered")),
                 name=name, dist=row["district_name"].strip(), time=t)
-    days.append(dict(label=label, sortkey=d, data=data))
+    days.append(dict(label=label, sortkey=d, time=t, data=data))
 labels = [d["label"] for d in days]
 L = len(days)
 
@@ -78,12 +81,29 @@ for di, d in enumerate(days):
 tot_masks = [sum(u["masks"][i] for u in unit_recs) for i in range(L)]
 tot_cit = [sum(u["cit"][i] for u in unit_recs) for i in range(L)]
 
-DATA = dict(labels=labels, districts=districts, units=unit_recs,
+DATA = dict(labels=labels, detailTimes=[d["time"] for d in days], districts=districts, units=unit_recs,
             distDay=dist_day, totMasks=tot_masks, totCit=tot_cit,
             totEnc=tot_enc, totAns=tot_ans,
             nUnitsAll=len(unit_recs))
 
-data_js = "const DATA = " + json.dumps(DATA, ensure_ascii=False) + ";"
+PROVINCE_SUMMARY = build_province_summary(
+    FOLDER,
+    target_province=province_name or os.environ.get("PHR_PROVINCE_NAME", "สตูล"),
+    previous_detail={"masks": tot_masks[-1], "citizens": tot_cit[-1], "answered": tot_ans[-1]},
+)
+PROVINCE_SUMMARY = apply_detail_context(
+    PROVINCE_SUMMARY,
+    detail_dates=[d["sortkey"] for d in days],
+    detail_labels=labels,
+    masks=tot_masks,
+    citizens=tot_cit,
+    answered=tot_ans,
+)
+if PROVINCE_SUMMARY:
+    PROVINCE_SUMMARY["detail_latest_time"] = f"{days[-1]['time'][:2]}:{days[-1]['time'][2:4]}"
+
+data_js = "const DATA = " + safe_json_for_script(DATA) + ";"
+province_js = "const PROVINCE = " + safe_json_for_script(PROVINCE_SUMMARY) + ";"
 
 TEMPLATE = r"""<!DOCTYPE html>
 <html lang="th" data-theme="light">
@@ -255,7 +275,8 @@ TEMPLATE = r"""<!DOCTYPE html>
   .legend{border-top:1px dashed #ded7ca}.search{border-radius:999px;background:#fff}.scroll{border:1px solid #e2dbcf;border-radius:13px;box-shadow:none}
   .insight{border-radius:14px}.rep-day{border-radius:14px;background:#fbfaf7;border:1px dashed #d8d0c3;box-shadow:none}.rep-item{border-radius:999px}
   .clip-label{font-size:9px;font-weight:750;letter-spacing:.08em;text-transform:uppercase;fill:#43089f}
-  .chartjs-box{position:relative;width:100%;min-height:230px}.chartjs-box canvas{display:block!important;width:100%!important;height:100%!important}
+  html,body{width:100%;max-width:100%;overflow-x:clip}.grid,.card,.chartbox,.chartjs-box{min-width:0}
+  .chartjs-box{position:relative;width:100%;min-height:230px;overflow:visible}.chartjs-box canvas{display:block!important;width:100%!important;height:100%!important;max-width:100%}
   .chart-powered{display:inline-flex;align-items:center;gap:5px;margin-left:8px;padding:2px 7px;border-radius:999px;background:#f1edff;color:#5925dc;font-size:8.5px;font-weight:750;letter-spacing:.04em;vertical-align:middle}
   .chart-powered::before{content:'';width:5px;height:5px;border-radius:50%;background:#6246ea;box-shadow:0 0 0 3px rgba(98,70,234,.12)}
   .icd-zone{margin:14px 0;padding:12px;border:1px solid #cfdcf8;border-radius:24px;background:linear-gradient(145deg,#edf4ff 0%,#f7f3ff 48%,#ecfbf4 100%);box-shadow:0 6px 0 #dbe5f6}
@@ -263,8 +284,27 @@ TEMPLATE = r"""<!DOCTYPE html>
   .icd-hero{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:16px 18px 10px}.icd-hero h2{margin:3px 0 2px;font-size:21px}.icd-hero p{margin:0;color:#67627a;font-size:11px}.icd-mark{display:grid;place-items:center;width:72px;height:72px;border-radius:22px;background:#171720;color:#fff;font-size:19px;font-weight:850;letter-spacing:-.04em;transform:rotate(3deg);box-shadow:6px 6px 0 #98d9c2}.icd-mark span{color:#b8a5ff}
   .icd-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:2px 0 12px}.icd-kpi{min-height:94px;padding:12px 14px;border:1px solid rgba(80,73,112,.14);border-radius:17px;background:#fff;box-shadow:0 3px 0 rgba(80,73,112,.10)}.icd-kpi:nth-child(1){background:#e5dcff}.icd-kpi:nth-child(2){background:#dff2ff}.icd-kpi:nth-child(3){background:#dcf7e8}.icd-kpi:nth-child(4){background:#fff0c8}.icd-kpi .lab{font-size:9px;font-weight:800;letter-spacing:.08em;color:#615d70;text-transform:uppercase}.icd-kpi .val{display:block;margin:5px 0 1px;font-size:25px;font-weight:850;color:#171720}.icd-kpi small{font-size:9px;color:#67627a}
   .icd-code{display:inline-flex;align-items:center;gap:4px;margin:2px 4px 2px 0;padding:4px 7px;border-radius:8px;background:#f1edff;color:#4d2cc4;font-size:9.5px;font-weight:800;white-space:nowrap}.icd-code b{color:#171720}.source-note{margin:0 0 10px;padding:9px 11px;border:1px dashed #d5a413;border-radius:12px;background:#fff9df;color:#795c00;font-size:10px}.icd-unit-card table{min-width:900px}.icd-unit-card td{vertical-align:top}.icd-unit-card td:nth-child(1){min-width:230px;font-weight:700}.icd-unit-card td:nth-child(5){min-width:370px}.icd-mini{display:block;margin:1px 0;color:#615d70;font-size:9.5px}.icd-charts{align-items:start}
-  @media(max-width:900px){.hero-art{width:250px;min-width:230px}.hero{padding:22px}.kpis{grid-template-columns:repeat(3,1fr)}.icd-kpis{grid-template-columns:repeat(2,1fr)}}
-  @media(max-width:680px){.hero{min-height:auto;align-items:flex-start}.hero-art{width:100%;min-width:0;height:130px}.hero-art svg{height:135px}h1{font-size:25px}.kpis{grid-template-columns:repeat(2,1fr)}}
+  .prov-zone{position:relative;margin:0 0 15px;padding:15px;border:1px solid #b9d6ff;border-radius:20px;background:linear-gradient(135deg,#e8f2ff 0%,#f3efff 52%,#e7faef 100%);box-shadow:0 4px 0 #d2e2f5;overflow:hidden}
+  .prov-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:12px}.prov-head h2{margin:2px 0;font-size:18px;letter-spacing:-.025em}.prov-head p{margin:0;color:#5d6472;font-size:10.5px}.prov-stamp{flex:0 0 auto;padding:7px 10px;border-radius:999px;background:#171720;color:#fff;font-size:9.5px;font-weight:750}
+  .prov-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:9px}.prov-kpi{min-height:88px;padding:11px 12px;border:1px solid rgba(23,23,32,.1);border-radius:15px;background:rgba(255,255,255,.86);box-shadow:0 2px 0 rgba(23,23,32,.07)}.prov-kpi .lab{font-size:8.5px;font-weight:800;letter-spacing:.07em;color:#667085;text-transform:uppercase}.prov-kpi .val{display:block;margin:5px 0 2px;font-size:23px;font-weight:820;letter-spacing:-.04em;color:#171720}.prov-kpi small{display:block;font-size:9px;color:#667085;line-height:1.35}.prov-note{margin:10px 0 0;padding:9px 11px;border-radius:11px;background:rgba(255,255,255,.72);color:#344054;font-size:10.5px;line-height:1.5}.prov-note b{color:#5925dc}
+  @media(max-width:900px){
+    body{padding:14px 12px 34px}.row{grid-template-columns:1fr}.hero{padding:20px}.hero-art{width:250px;min-width:220px}.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.icd-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .filterbar{align-items:stretch}.filterbar .controls{max-width:100%;flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-inline:contain;padding:2px 2px 6px;scrollbar-width:none}.filterbar .controls::-webkit-scrollbar{display:none}
+    .pill,.chip,.btn{display:inline-flex;align-items:center;justify-content:center;min-height:40px;flex:0 0 auto}.search{min-height:40px}
+    .card h2{line-height:1.35;gap:6px;overflow-wrap:anywhere}.chart-powered{flex:0 0 auto}.scroll{max-width:100%;overscroll-behavior-inline:contain;-webkit-overflow-scrolling:touch}.prov-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  }
+  @media(max-width:680px){
+    body{padding:8px 7px 28px;line-height:1.5}.hero{min-height:auto;align-items:flex-start;flex-direction:column;padding:18px 14px;border-radius:20px}.hero-copy{max-width:100%}.hero-art{width:100%;min-width:0;height:122px;align-self:center}.hero-art svg{width:min(100%,320px);height:128px}h1{font-size:25px}.sub{font-size:11.5px}.hero-meta{gap:6px}.live-status,.light-badge{font-size:10px}
+    .filterbar{padding:9px 8px;gap:7px;border-radius:14px}.filterbar .controls{width:100%}.filter-label{flex:0 0 auto}.light-badge{align-self:flex-start}.pill,.chip{padding:7px 11px}
+    .kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.kpi{min-height:102px;padding:11px;border-radius:15px}.kpi .v{font-size:25px}.kpi .l{font-size:10px}.kpi-top{margin-bottom:7px}
+    .card{padding:12px 10px;border-radius:16px;margin-bottom:10px}.card h2{font-size:12px;min-height:0;margin-bottom:9px;padding-bottom:9px;flex-wrap:wrap}.card h2::after{display:none}.chart-powered{margin-left:0;font-size:8px}
+    .legend{font-size:9.5px;gap:7px 10px;margin-top:8px;padding-top:8px}.legend span{white-space:normal}.insight{font-size:11px;padding:9px 10px}.rep-day{padding:10px}.rep-sec{align-items:flex-start}.rep-item{white-space:normal;line-height:1.45}
+    .search{width:100%;min-width:0;height:44px;font-size:16px}.scroll{border-radius:10px}.dsumwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}.dsumwrap table{min-width:620px}
+    .icd-zone{margin:10px 0;padding:7px;border-radius:18px;box-shadow:0 4px 0 #dbe5f6}.icd-hero{padding:12px 10px 8px;gap:10px}.icd-hero h2{font-size:18px}.icd-hero p{font-size:10px}.icd-mark{width:56px;height:56px;border-radius:17px;font-size:15px;box-shadow:4px 4px 0 #98d9c2}.icd-kpis{gap:7px}.icd-kpi{min-height:82px;padding:10px;border-radius:14px}.icd-kpi .val{font-size:22px}.icd-kpi .lab{font-size:8px}.icd-kpi small{font-size:8.5px}.source-note{font-size:9px;line-height:1.45}.icd-unit-card td:nth-child(1){min-width:190px}.icd-unit-card td:nth-child(5){min-width:330px}.prov-zone{padding:11px;border-radius:17px}.prov-head{flex-direction:column;gap:7px}.prov-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.prov-kpi{min-height:82px;padding:10px}.prov-kpi .val{font-size:21px}
+  }
+  @media(max-width:480px){
+    .pill,.chip,.btn{min-height:44px}.chart-powered{display:none}.icd-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.icd-hero .eyebrow{font-size:8px;letter-spacing:.09em}.icd-mark{width:50px;height:50px}.card h2{font-size:11.5px}
+  }
 </style></head>
 <body>
 <header class="hero">
@@ -319,6 +359,15 @@ TEMPLATE = r"""<!DOCTYPE html>
 </div>
 
 <div class="grid kpis" id="kpiBox"></div>
+
+<section class="prov-zone" id="provinceZone" hidden>
+  <div class="prov-head">
+    <div><div class="eyebrow">Province pulse · ข้อมูลภาพรวมล่าสุด</div><h2 id="provinceTitle"></h2><p id="provinceSubtitle"></p></div>
+    <div class="prov-stamp" id="provinceStamp"></div>
+  </div>
+  <div class="prov-grid" id="provinceKpis"></div>
+  <div class="prov-note" id="provinceInsight"></div>
+</section>
 
 <div class="card">
   <h2 class="am">🕒 มิติเวลา 1 — แนวโน้ม Masks &amp; ประชาชน <span class="chart-powered">Chart.js</span></h2>
@@ -434,6 +483,7 @@ TEMPLATE = r"""<!DOCTYPE html>
 <script>/*__DATALABELS__*/</script>
 <script>
 /*__DATA__*/
+/*__PROVINCE__*/
 /*__ICD10__*/
 const DIST_COLORS={'ละงู':'#635bff','เมืองสตูล':'#0a72ef','ควนกาหลง':'#f79009','ควนโดน':'#9b51e0','ทุ่งหว้า':'#12b76a'};
 const state={dist:'all', days:DATA.labels.map((_,i)=>i), theme:'light', sortKey:'name', sortDir:1, search:'', reportDay:-1};
@@ -535,42 +585,62 @@ Chart.defaults.font.family="-apple-system,BlinkMacSystemFont,'Noto Sans Thai','L
 Chart.defaults.color='#6f6b65';
 const CHARTS={};
 const reduceMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-function chartTooltip(){return {enabled:true,backgroundColor:'#171720',titleColor:'#fff',bodyColor:'#fff',padding:10,cornerRadius:10,displayColors:true,boxPadding:4,titleFont:{weight:'700'},bodyFont:{size:11},borderColor:'rgba(255,255,255,.12)',borderWidth:1};}
+function viewportProfile(){const w=window.innerWidth;return {width:w,phone:w<=480,tablet:w<=900};}
+function compactDate(label){const p=viewportProfile();if(!p.phone)return label;const s=String(label).split('/');return s.length===3?`${s[0]}/${s[1]}`:label;}
+function wrapChartLabel(value,maxChars){
+  const chars=Array.from(String(value));if(chars.length<=maxChars)return String(value);
+  const lines=[];let rest=chars;
+  while(rest.length){
+    if(rest.length<=maxChars){lines.push(rest.join('').trim());break;}
+    let cut=Math.min(maxChars,rest.length),space=-1;
+    for(let i=cut-1;i>Math.floor(maxChars*.55);i--)if(rest[i]===' '){space=i;break;}
+    if(space>0)cut=space;lines.push(rest.slice(0,cut).join('').trim());rest=rest.slice(cut);while(rest[0]===' ')rest.shift();
+  }
+  return lines;
+}
+function chartTooltip(){const p=viewportProfile();return {enabled:true,backgroundColor:'#171720',titleColor:'#fff',bodyColor:'#fff',padding:p.phone?9:10,cornerRadius:10,displayColors:true,boxPadding:4,titleFont:{weight:'700',size:p.phone?11:12},bodyFont:{size:p.phone?10:11},borderColor:'rgba(255,255,255,.12)',borderWidth:1};}
 function chartScales(horizontal=false){
+  const p=viewportProfile();
   const grid={color:'#ece6dc',drawBorder:false,lineWidth:1};
-  const ticks={color:'#77716a',font:{size:10},padding:8};
+  const ticks={color:'#77716a',font:{size:p.phone?9:10},padding:p.phone?5:8,maxRotation:0};
   return horizontal?
-    {x:{beginAtZero:true,grid,ticks},y:{grid:{display:false},ticks:{...ticks,color:'#2e2b31',font:{size:10,weight:'600'}}}}:
-    {x:{grid:{display:false},ticks},y:{beginAtZero:true,grid,ticks}};
+    {x:{beginAtZero:true,grace:p.phone?'24%':'16%',grid,ticks:{...ticks,maxTicksLimit:p.phone?5:7}},y:{grid:{display:false},ticks:{...ticks,color:'#2e2b31',font:{size:p.phone?8.5:10,weight:'600'},padding:p.phone?4:8}}}:
+    {x:{grid:{display:false},ticks:{...ticks,autoSkip:true,maxTicksLimit:p.phone?4:7}},y:{beginAtZero:true,grid,ticks:{...ticks,maxTicksLimit:p.phone?6:8}}};
 }
 function mountChart(el,config,height=250){
+  const p=viewportProfile();
   if(CHARTS[el.id]){CHARTS[el.id].destroy();delete CHARTS[el.id];}
   el.classList.add('chartjs-box');el.style.height=height+'px';
   el.innerHTML='<canvas role="img" aria-label="กราฟข้อมูล '+el.id+'"></canvas>';
-  const base={responsive:true,maintainAspectRatio:false,animation:reduceMotion?false:{duration:650,easing:'easeOutQuart'},interaction:{mode:'index',intersect:false},layout:{padding:{top:18,right:10,left:4,bottom:2}},plugins:{legend:{display:false},tooltip:chartTooltip(),datalabels:{display:false}}};
+  const base={responsive:true,maintainAspectRatio:false,animation:reduceMotion?false:{duration:650,easing:'easeOutQuart'},interaction:{mode:'index',intersect:false},layout:{padding:{top:p.phone?14:18,right:p.phone?5:10,left:p.phone?0:4,bottom:2}},plugins:{legend:{display:false},tooltip:chartTooltip(),datalabels:{display:false}}};
   config.options={...base,...(config.options||{}),plugins:{...base.plugins,...((config.options&&config.options.plugins)||{})}};
   CHARTS[el.id]=new Chart(el.querySelector('canvas'),config);
 }
 function lineChart(el,labels,series){
-  const sets=series.map((se,i)=>({label:se.name,data:se.vals,borderColor:se.color,backgroundColor:se.color,borderWidth:3,pointRadius:4,pointHoverRadius:7,pointBackgroundColor:'#fff',pointBorderColor:se.color,pointBorderWidth:3,tension:.34,fill:false}));
-  mountChart(el,{type:'line',data:{labels,datasets:sets},options:{scales:chartScales(false),plugins:{datalabels:{display:true,color:'#171720',align:'top',anchor:'end',offset:2,clamp:true,font:{size:11,weight:'700'},formatter:v=>v},tooltip:{...chartTooltip(),callbacks:{label:c=>`${c.dataset.label}: ${c.formattedValue}`}}}}},270);
+  const p=viewportProfile(),displayLabels=labels.map(compactDate);
+  const sets=series.map(se=>({label:se.name,data:se.vals,borderColor:se.color,backgroundColor:se.color,borderWidth:p.phone?2.4:3,pointRadius:p.phone?3:4,pointHoverRadius:p.phone?5:7,pointBackgroundColor:'#fff',pointBorderColor:se.color,pointBorderWidth:p.phone?2:3,tension:.34,fill:false}));
+  mountChart(el,{type:'line',data:{labels:displayLabels,datasets:sets},options:{scales:chartScales(false),plugins:{datalabels:{display:true,color:'#171720',align:'top',anchor:'end',offset:2,clamp:true,font:{size:p.phone?9:11,weight:'700'},formatter:v=>v},tooltip:{...chartTooltip(),callbacks:{title:c=>labels[c[0].dataIndex],label:c=>`${c.dataset.label}: ${c.formattedValue}`}}}}},p.phone?240:270);
 }
 function barChart(el,labels,vals){
+  const p=viewportProfile(),displayLabels=labels.map(compactDate);
   const colors=vals.map(v=>v>0?'#6246ea':v<0?'#e84d5b':'#a6a19a');
-  mountChart(el,{type:'bar',data:{labels,datasets:[{label:'ส่วนต่าง Masks',data:vals,backgroundColor:colors,borderColor:colors,borderWidth:1,borderRadius:9,borderSkipped:false,maxBarThickness:58}]},options:{scales:chartScales(false),plugins:{datalabels:{display:true,color:'#171720',anchor:'end',align:'end',font:{size:11,weight:'700'},formatter:v=>(v>0?'+':'')+v},tooltip:{...chartTooltip(),callbacks:{label:c=>`เปลี่ยนแปลง: ${c.raw>0?'+':''}${c.raw}`}}}}},240);
+  mountChart(el,{type:'bar',data:{labels:displayLabels,datasets:[{label:'ส่วนต่าง Masks',data:vals,backgroundColor:colors,borderColor:colors,borderWidth:1,borderRadius:p.phone?7:9,borderSkipped:false,maxBarThickness:p.phone?42:58}]},options:{scales:chartScales(false),plugins:{datalabels:{display:true,color:'#171720',anchor:'end',align:'end',clamp:true,font:{size:p.phone?9:11,weight:'700'},formatter:v=>(v>0?'+':'')+v},tooltip:{...chartTooltip(),callbacks:{title:c=>labels[c[0].dataIndex],label:c=>`เปลี่ยนแปลง: ${c.raw>0?'+':''}${c.raw}`}}}}},p.phone?220:240);
 }
 function hbar(el,items){
-  const height=Math.max(230,Math.min(500,items.length*35+50));
-  const labels=items.map(i=>i.name),vals=items.map(i=>i.val),colors=items.map((i,n)=>['#6246ea','#246bfd','#078a52','#f0a202','#e84d5b','#9a62db'][n%6]);
-  mountChart(el,{type:'bar',data:{labels,datasets:[{label:'ค่า',data:vals,backgroundColor:colors,borderRadius:8,borderSkipped:false,barThickness:16}]},options:{indexAxis:'y',layout:{padding:{top:6,right:88,left:2,bottom:2}},scales:chartScales(true),plugins:{datalabels:{display:true,color:'#171720',anchor:'end',align:'right',clamp:true,font:{size:10,weight:'700'},formatter:(v,c)=>`${v} ${items[c.dataIndex].extra||''}`},tooltip:{...chartTooltip(),callbacks:{label:c=>`${c.raw} ${items[c.dataIndex].extra||''}`}}}}},height);
+  const p=viewportProfile(),maxChars=p.phone?20:(p.tablet?32:52),labels=items.map(i=>wrapChartLabel(i.name,maxChars));
+  const maxLines=Math.max(1,...labels.map(l=>Array.isArray(l)?l.length:1)),row=p.phone?29+maxLines*9:(p.tablet?27+maxLines*8:24+maxLines*7),height=Math.max(p.phone?265:230,Math.min(760,items.length*row+50));
+  const vals=items.map(i=>i.val),colors=items.map((i,n)=>['#6246ea','#246bfd','#078a52','#f0a202','#e84d5b','#9a62db'][n%6]);
+  mountChart(el,{type:'bar',data:{labels,datasets:[{label:'ค่า',data:vals,backgroundColor:colors,borderRadius:p.phone?6:8,borderSkipped:false,barThickness:p.phone?13:16}]},options:{indexAxis:'y',layout:{padding:{top:6,right:p.phone?45:72,left:0,bottom:2}},scales:chartScales(true),plugins:{datalabels:{display:true,color:'#171720',anchor:'end',align:'right',clamp:true,clip:false,font:{size:p.phone?9:10,weight:'700'},formatter:(v,c)=>`${v}${items[c.dataIndex].extra?' '+items[c.dataIndex].extra:''}`},tooltip:{...chartTooltip(),callbacks:{title:c=>items[c[0].dataIndex].name,label:c=>`${c.raw} ${items[c.dataIndex].extra||''}`}}}}},height);
 }
 function stacked(el,labels,distData){
+  const p=viewportProfile(),displayLabels=labels.map(compactDate);
   const datasets=DATA.districts.map(d=>({label:d,data:labels.map(l=>distData[l][d]),backgroundColor:DIST_COLORS[d]||'#9ca3af',borderColor:'#fff',borderWidth:1,borderRadius:4,borderSkipped:false}));
-  mountChart(el,{type:'bar',data:{labels,datasets},options:{scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:10},color:'#77716a'}},y:{stacked:true,beginAtZero:true,grid:{color:'#ece6dc'},ticks:{font:{size:10},color:'#77716a'}}},plugins:{datalabels:{display:false},tooltip:{...chartTooltip(),callbacks:{label:c=>`${c.dataset.label}: ${c.raw}`}}}}},240);
+  mountChart(el,{type:'bar',data:{labels:displayLabels,datasets},options:{scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:p.phone?9:10},color:'#77716a',maxRotation:0}},y:{stacked:true,beginAtZero:true,grid:{color:'#ece6dc'},ticks:{font:{size:p.phone?9:10},color:'#77716a',maxTicksLimit:p.phone?6:8}}},plugins:{datalabels:{display:false},tooltip:{...chartTooltip(),callbacks:{title:c=>labels[c[0].dataIndex],label:c=>`${c.dataset.label}: ${c.raw}`}}}}},p.phone?220:240);
 }
 function doughnutChart(el,labels,vals){
+  const p=viewportProfile(),displayLabels=labels.map(l=>p.phone?String(l).split('·')[0].trim():l);
   const colors=['#6246ea','#246bfd','#078a52','#f0a202','#e84d5b','#9a62db','#20a4a7','#ff8a65','#697386','#b8a5ff','#65c18c','#ffd166'];
-  mountChart(el,{type:'doughnut',data:{labels,datasets:[{data:vals,backgroundColor:colors.slice(0,labels.length),borderColor:'#fff',borderWidth:3,hoverOffset:7}]},options:{cutout:'62%',layout:{padding:{top:4,right:8,bottom:4,left:8}},plugins:{legend:{display:true,position:'bottom',labels:{usePointStyle:true,pointStyle:'circle',boxWidth:7,padding:11,font:{size:9}}},datalabels:{display:c=>c.dataset.data[c.dataIndex]>=3,color:'#fff',font:{size:10,weight:'800'},formatter:v=>v},tooltip:{...chartTooltip(),callbacks:{label:c=>`${c.label}: ${c.raw} รายการ`}}}}},330);
+  mountChart(el,{type:'doughnut',data:{labels:displayLabels,datasets:[{data:vals,backgroundColor:colors.slice(0,labels.length),borderColor:'#fff',borderWidth:p.phone?2:3,hoverOffset:7}]},options:{cutout:p.phone?'66%':'62%',layout:{padding:{top:4,right:4,bottom:4,left:4}},plugins:{legend:{display:true,position:'bottom',labels:{usePointStyle:true,pointStyle:'circle',boxWidth:7,padding:p.phone?8:11,font:{size:p.phone?8:9}}},datalabels:{display:c=>c.dataset.data[c.dataIndex]>=3,color:'#fff',font:{size:p.phone?9:10,weight:'800'},formatter:v=>v},tooltip:{...chartTooltip(),callbacks:{label:c=>`${labels[c.dataIndex]}: ${c.raw} รายการ`}}}}},p.phone?290:330);
 }
 
 // ---- renderers ----
@@ -599,6 +669,25 @@ function renderKPI(){
    <div class="kpi"><div class="kpi-top">${KI.hospital}<span class="kmini">UNITS</span></div><div class="v">${present}</div><div class="l">หน่วยบริการที่มีข้อมูลล่าสุด</div></div>
    <div class="kpi"><div class="kpi-top">${KI.ratio}<span class="kmini">RATIO</span></div><div class="v am">${ratio}</div><div class="l">Masks ต่อประชาชนโดยรวม</div></div>
    <div class="kpi"><div class="kpi-top">${KI.shield}<span class="kmini">QUALITY</span></div><div class="v">100%</div><div class="l">ข้อมูลจับคู่สำเร็จทุกหน่วย</div></div>`;
+}
+function renderProvince(){
+  const zone=document.getElementById('provinceZone');if(!PROVINCE){zone.hidden=true;return;}
+  zone.hidden=false;const p=PROVINCE.province,fmt=n=>Number(n).toLocaleString('th-TH'),signed=n=>(n>0?'+':'')+n;
+  document.getElementById('provinceTitle').textContent=`${p.province_name} · รอบ ${PROVINCE.snapshot_label}`;
+  document.getElementById('provinceSubtitle').textContent=PROVINCE.detail_aligned?`มีข้อมูลจังหวัดและรายละเอียด ${p.hospitals} หน่วยบริการถึงวันที่ ${PROVINCE.detail_latest_label} รอบ ${PROVINCE.detail_latest_time}`:'ภาพรวมระดับจังหวัด ใช้เสริมข้อมูลรายละเอียดหน่วยบริการของวันก่อนหน้า';
+  document.getElementById('provinceStamp').textContent=`อันดับ ${p.rank}/${p.national_count} ประเทศ`;
+  document.getElementById('provinceKpis').innerHTML=`
+    <div class="prov-kpi"><span class="lab">CASES · เคส</span><b class="val">${fmt(p.masks)}</b><small>${signed(p.delta_masks)} เทียบ ${PROVINCE.baseline_label}</small></div>
+    <div class="prov-kpi"><span class="lab">CITIZENS · คน</span><b class="val">${fmt(p.citizens)}</b><small>${signed(p.delta_citizens)} เทียบ ${PROVINCE.baseline_label}</small></div>
+    <div class="prov-kpi"><span class="lab">ANSWERED · ตอบกลับ</span><b class="val">${fmt(p.answered)}</b><small>${signed(p.delta_answered)} เทียบ ${PROVINCE.baseline_label}</small></div>
+    <div class="prov-kpi"><span class="lab">RESPONSE RATE</span><b class="val">${p.answer_rate.toFixed(2)}%</b><small>ตอบกลับ ÷ เคส</small></div>
+    <div class="prov-kpi"><span class="lab">MATCH QUALITY</span><b class="val">${Number(p.match_rate_pct).toFixed(1)}%</b><small>${fmt(p.matched)} matched · ${fmt(p.unmatched)} unmatched</small></div>
+    <div class="prov-kpi"><span class="lab">REGION 12</span><b class="val">${p.region_rank}/${p.region_count}</b><small>${PROVINCE.region.province_share_pct.toFixed(2)}% ของเคสเขต</small></div>`;
+  const gap=PROVINCE.region.answer_rate-p.answer_rate,nationalGap=PROVINCE.national.answer_rate-p.answer_rate;
+  const last=DATA.labels.length-1,prev=Math.max(0,last-1),changes=DATA.units.map(u=>({name:u.name,delta:u.masks[last]-u.masks[prev]})).filter(x=>x.delta!==0).sort((a,b)=>Math.abs(b.delta)-Math.abs(a.delta));
+  const changeText=changes.length?` หน่วยที่เปลี่ยนแปลงสูงสุดคือ ${changes[0].name} ${signed(changes[0].delta)} เคส`:' ไม่พบหน่วยที่มียอดเคสเปลี่ยนแปลง';
+  const dg=PROVINCE.detail_gap,dt=PROVINCE.detail_totals,reconcile=dg.citizens===0?'ยอดคนระดับจังหวัดและผลรวมรายหน่วยเท่ากัน':`ยอดคนระดับจังหวัด ${fmt(p.citizens)} คน ขณะที่ผลรวมรายหน่วย ${fmt(dt.citizens)} คน (ต่างกัน ${signed(dg.citizens)} เนื่องจากคนเดียวอาจรับบริการหลายหน่วย)`;
+  document.getElementById('provinceInsight').textContent=`สัญญาณล่าสุด: เคส ${signed(p.delta_masks)} แต่ตอบกลับ ${signed(p.delta_answered)} ทำให้อัตราตอบกลับอยู่ที่ ${p.answer_rate.toFixed(2)}% ต่ำกว่าค่าเฉลี่ยเขต ${gap.toFixed(2)} จุด และประเทศ ${nationalGap.toFixed(2)} จุด.${changeText} เคสและตอบกลับระดับจังหวัดตรงกับผลรวมรายหน่วย; ${reconcile}`;
 }
 function renderTrend(){
   const u=selUnits();const {idx,m,c}=totalsFor(u);
@@ -681,7 +770,7 @@ function renderICD(){
     <div class="icd-kpi"><span class="lab">DIAGNOSIS ITEMS</span><b class="val">${total}</b><small>รายการวินิจฉัยที่แสดง</small></div>
     <div class="icd-kpi"><span class="lab">SERVICE UNITS</span><b class="val">${units.length}</b><small>หน่วยในพื้นที่ที่เลือก</small></div>
     <div class="icd-kpi"><span class="lab">Z-CATEGORY</span><b class="val">${zShare}%</b><small>คัดกรอง/บริการสุขภาพ</small></div>`;
-  const top=ranked.slice(0,10).map(d=>({name:`${d.code} · ${d.label.length>24?d.label.slice(0,24)+'…':d.label}`,val:d.count,extra:'รายการ'}));
+  const top=ranked.slice(0,10).map(d=>({name:`${d.code} · ${d.label}`,val:d.count,extra:'รายการ'}));
   hbar(document.getElementById('icdTopChart'),top);
   const chap=[...chapters.entries()].sort((a,b)=>b[1]-a[1]);
   const shown=chap.slice(0,4),other=chap.slice(4).reduce((s,x)=>s+x[1],0);
@@ -813,7 +902,14 @@ function buildControls(){
   document.getElementById('stackLegend').innerHTML=DATA.districts.map(d=>`<span style="color:${DIST_COLORS[d]||'#94a3b8'}">■ ${d}</span>`).join('');
   buildReportNav();
 }
-function renderAll(){renderKPI();renderTrend();renderNet();renderStack();renderPareto();renderMom();renderRatio();renderAns();renderICD();renderUnitTable();renderReport();}
+function renderAll(){renderKPI();renderProvince();renderTrend();renderNet();renderStack();renderPareto();renderMom();renderRatio();renderAns();renderICD();renderUnitTable();renderReport();}
+let responsiveMode=viewportProfile().phone?'phone':(viewportProfile().tablet?'tablet':'desktop'),resizeTimer;
+window.addEventListener('resize',()=>{
+  clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{
+    const p=viewportProfile(),next=p.phone?'phone':(p.tablet?'tablet':'desktop');
+    if(next!==responsiveMode){responsiveMode=next;renderAll();}else Object.values(CHARTS).forEach(c=>c.resize());
+  },160);
+},{passive:true});
 buildControls();renderAll();
 </script>
 </body></html>"""
@@ -825,12 +921,13 @@ with open(os.path.join(VENDOR, "chartjs-plugin-datalabels.min.js"), encoding="ut
     datalabels_src = f.read()
 with open(os.path.join(BASE_DIR, "icd10_summary.json"), encoding="utf-8") as f:
     icd10_data = json.load(f)
-icd10_js = "const ICD10 = " + json.dumps(icd10_data, ensure_ascii=False) + ";"
+icd10_js = "const ICD10 = " + safe_json_for_script(icd10_data) + ";"
 
 html = (TEMPLATE
         .replace("/*__CHARTJS__*/", chartjs_src)
         .replace("/*__DATALABELS__*/", datalabels_src)
         .replace("/*__DATA__*/", data_js)
+        .replace("/*__PROVINCE__*/", province_js)
         .replace("/*__ICD10__*/", icd10_js))
 OUT = os.environ.get("PHR_DASHBOARD_OUT", os.path.join(BASE_DIR, "index.html"))
 with open(OUT, "w", encoding="utf-8") as f:
