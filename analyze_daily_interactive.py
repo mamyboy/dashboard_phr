@@ -278,6 +278,7 @@ TEMPLATE = r"""<!DOCTYPE html>
   html,body{width:100%;max-width:100%;overflow-x:clip}.grid,.card,.chartbox,.chartjs-box{min-width:0}
   .chartjs-box{position:relative;width:100%;min-height:230px;overflow:visible}.chart-stage{position:relative;width:100%;height:100%}.chartjs-box canvas{display:block!important;width:100%!important;height:100%!important;max-width:100%}
   .mobile-category-key{display:none}
+  .card{container-type:inline-size;container-name:dashboard-card}
   .chart-powered{display:inline-flex;align-items:center;gap:5px;margin-left:8px;padding:2px 7px;border-radius:999px;background:#f1edff;color:#5925dc;font-size:8.5px;font-weight:750;letter-spacing:.04em;vertical-align:middle}
   .chart-powered::before{content:'';width:5px;height:5px;border-radius:50%;background:#6246ea;box-shadow:0 0 0 3px rgba(98,70,234,.12)}
   .icd-zone{margin:14px 0;padding:12px;border:1px solid #cfdcf8;border-radius:24px;background:linear-gradient(145deg,#edf4ff 0%,#f7f3ff 48%,#ecfbf4 100%);box-shadow:0 6px 0 #dbe5f6}
@@ -307,6 +308,19 @@ TEMPLATE = r"""<!DOCTYPE html>
   }
   @media(max-width:480px){
     .pill,.chip,.btn{min-height:44px}.chart-powered{display:none}.icd-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.icd-hero .eyebrow{font-size:8px;letter-spacing:.09em}.icd-mark{width:50px;height:50px}.card h2{font-size:11.5px}
+  }
+  @media(max-width:1024px){.row{grid-template-columns:1fr}}
+  @media(max-width:768px){.filterbar .controls{scroll-snap-type:x proximity}.filterbar .pill,.filterbar .chip{scroll-snap-align:start}}
+  @media(max-width:430px){body{padding-inline:7px}.prov-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media(max-width:390px){.hero{padding-inline:12px}.kpi{min-height:98px}.prov-kpi{padding-inline:9px}}
+  @media(max-width:360px){h1{font-size:22px}.kpi .v{font-size:23px}.card{padding-inline:8px}}
+  @supports(container-type:inline-size){
+    @container dashboard-card (max-width:430px){
+      h2{font-size:11.5px;line-height:1.35;overflow-wrap:anywhere}.chart-powered{display:none}.legend{gap:7px 10px}.mobile-category-key{grid-template-columns:1fr}
+    }
+    @container dashboard-card (min-width:431px) and (max-width:768px){
+      h2{font-size:12px}.legend{gap:9px 12px}
+    }
   }
 </style></head>
 <body>
@@ -582,18 +596,16 @@ function attachTips(el){el.querySelectorAll('.bar').forEach(b=>{
   b.addEventListener('mousemove',e=>showTip(e,b.dataset.tip));
   b.addEventListener('mouseleave',hideTip);});}
 
+// ---- Responsive controller + Chart.js modules ----
+/*__RESPONSIVE_CONTROLLER__*/
 // ---- Chart.js 4.5.1 + DataLabels 2.2.0 modules ----
 Chart.register(ChartDataLabels);
 Chart.defaults.font.family="-apple-system,BlinkMacSystemFont,'Noto Sans Thai','Leelawadee UI','Segoe UI',sans-serif";
 Chart.defaults.color='#6f6b65';
 const CHARTS={};
 const reduceMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-function viewportProfile(){const w=window.innerWidth;return {width:w,phone:w<=480,tablet:w<=900};}
+function viewportProfile(){return ResponsiveChartController.profileForWidth(window.innerWidth);}
 function compactDate(label){const p=viewportProfile();if(!p.phone)return label;const s=String(label).split('/');return s.length===3?`${s[0]}/${s[1]}`:label;}
-function compactMobileCategory(value){
-  let s=String(value).replace(/^โรงพยาบาลส่งเสริมสุขภาพตำบล\s*/,'รพ.สต.').replace(/^โรงพยาบาล\s*/,'รพ.').replace(/^ศูนย์สุขภาพชุมชน\s*/,'ศสม.').replace(/\s+/g,' ').trim();
-  const chars=Array.from(s);return chars.length>18?chars.slice(0,17).join('')+'…':s;
-}
 function wrapChartLabel(value,maxChars){
   const chars=Array.from(String(value));if(chars.length<=maxChars)return String(value);
   const lines=[];let rest=chars;
@@ -919,14 +931,8 @@ function buildControls(){
   buildReportNav();
 }
 function renderAll(){renderKPI();renderProvince();renderTrend();renderNet();renderStack();renderPareto();renderMom();renderRatio();renderAns();renderICD();renderUnitTable();renderReport();}
-let responsiveMode=viewportProfile().phone?'phone':(viewportProfile().tablet?'tablet':'desktop'),resizeTimer;
-window.addEventListener('resize',()=>{
-  clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{
-    const p=viewportProfile(),next=p.phone?'phone':(p.tablet?'tablet':'desktop');
-    if(next!==responsiveMode){responsiveMode=next;renderAll();}else Object.values(CHARTS).forEach(c=>c.resize());
-  },160);
-},{passive:true});
-buildControls();renderAll();
+const responsiveController=new ResponsiveChartController({charts:CHARTS,rerender:renderAll});
+buildControls();renderAll();responsiveController.start();
 </script>
 </body></html>"""
 
@@ -935,6 +941,8 @@ with open(os.path.join(VENDOR, "chart.umd.min.js"), encoding="utf-8") as f:
     chartjs_src = f.read()
 with open(os.path.join(VENDOR, "chartjs-plugin-datalabels.min.js"), encoding="utf-8") as f:
     datalabels_src = f.read()
+with open(os.path.join(BASE_DIR, "responsive_chart_controller.js"), encoding="utf-8") as f:
+    responsive_controller_src = f.read()
 with open(os.path.join(BASE_DIR, "icd10_summary.json"), encoding="utf-8") as f:
     icd10_data = json.load(f)
 icd10_js = "const ICD10 = " + safe_json_for_script(icd10_data) + ";"
@@ -942,6 +950,7 @@ icd10_js = "const ICD10 = " + safe_json_for_script(icd10_data) + ";"
 html = (TEMPLATE
         .replace("/*__CHARTJS__*/", chartjs_src)
         .replace("/*__DATALABELS__*/", datalabels_src)
+        .replace("/*__RESPONSIVE_CONTROLLER__*/", responsive_controller_src)
         .replace("/*__DATA__*/", data_js)
         .replace("/*__PROVINCE__*/", province_js)
         .replace("/*__ICD10__*/", icd10_js))

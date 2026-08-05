@@ -18,6 +18,8 @@ Interactive dashboard สำหรับวิเคราะห์ข้อม�
 - กรองข้อมูล ICD-10 ตามอำเภอร่วมกับ Dashboard หลัก
 - แสดงขอบเขตข้อมูลและจำนวนรหัสที่ภาพต้นทางซ่อนไว้อย่างชัดเจน
 - Tooltip, data labels, responsive canvas และ reduced-motion support
+- Responsive controller ใช้ `ResizeObserver`, `visualViewport`, orientation events และ CSS Container Queries
+- Breakpoints สำหรับ 360, 390, 430, 768 และ 1024px พร้อม HTML category key บน iPhone
 - รายงานหน่วยเพิ่มขึ้น ใหม่ และลดลงรายวัน
 - จับคู่หน่วยบริการด้วย `hospital_code`
 - เลือก snapshot ล่าสุดอัตโนมัติเมื่อวันเดียวกันมีหลายไฟล์
@@ -31,7 +33,10 @@ Interactive dashboard สำหรับวิเคราะห์ข้อม�
 ├── index.html                         # Dashboard ที่ build แล้ว
 ├── analyze_daily_interactive.py      # ตัวสร้าง Dashboard
 ├── dashboard_data.py                  # ฟังก์ชันอ่าน/สรุป province snapshot และ safe JSON
+├── responsive_chart_controller.js     # ResizeObserver, breakpoints และ chart resize lifecycle
 ├── tests/test_dashboard_data.py       # Unit tests สำหรับ province summary
+├── tests/test_mobile_chart_layout.py  # Regression test สำหรับ category labels บนมือถือ
+├── tests/test_responsive_controller.py # Breakpoint/module integration tests
 ├── icd10_summary.json                # ICD-10 ที่ถอดและตรวจจากภาพ 14 หน่วย
 ├── vendor/
 │   ├── chart.umd.min.js
