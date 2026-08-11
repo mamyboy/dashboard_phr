@@ -788,14 +788,14 @@ function renderPareto(){
   const ranked=u.map(x=>({x,v:x.masks[lastIdx]})).sort((a,b)=>b.v-a.v);
   const tot=ranked.reduce((s,o)=>s+o.v,0)||1;
   let cum=0;const items=ranked.slice(0,8).map(o=>{cum+=o.v;
-    return {name:o.x.name,val:o.v,extra:`(${Math.round(100*cum/tot)}%)`,color:'url(#gA)',suffix:''};});
+    return {name:o.x.name,val:o.v,extra:`(${Math.round(100*cum/tot)}%)`,suffix:''};});
   hbar(document.getElementById('paretoChart'),items);
 }
 function renderMom(){
   const u=selUnits();const idx=activeIdx();
   const items=u.map(x=>{const f=x.masks[idx[0]],l=x.masks[idx[idx.length-1]];
     return {x,f,l,d:l-f};}).filter(o=>o.d>0).sort((a,b)=>b.d-a.d)
-    .map(o=>({name:o.x.name,val:o.d,extra:`(${o.f}→${o.l})`,color:'url(#gB)',suffix:''}));
+    .map(o=>({name:o.x.name,val:o.d,extra:`(${o.f}→${o.l})`,suffix:''}));
   if(!items.length){document.getElementById('momChart').innerHTML='<div class="mut">ไม่มีหน่วยใดเพิ่มขึ้นในช่วงที่เลือก</div>';return;}
   hbar(document.getElementById('momChart'),items);
 }
@@ -803,7 +803,7 @@ function renderRatio(){
   const u=selUnits();const lastIdx=activeIdx().slice(-1)[0];
   const items=u.map(x=>({x,r:(x.cit[lastIdx]?Math.round(x.masks[lastIdx]/x.cit[lastIdx]*100)/100:0),m:x.masks[lastIdx],c:x.cit[lastIdx]}))
     .sort((a,b)=>b.r-a.r).slice(0,8)
-    .map(o=>({name:o.x.name,val:o.r,extra:`(${o.m}/${o.c})`,color:'url(#gC)',suffix:''}));
+    .map(o=>({name:o.x.name,val:o.r,extra:`(${o.m}/${o.c})`,suffix:''}));
   hbar(document.getElementById('ratioChart'),items);
 }
 function renderAns(){

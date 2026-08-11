@@ -46,6 +46,11 @@ class UnitResponseDimensionTests(unittest.TestCase):
         self.assertIn("keyDetail:", source)
         self.assertIn("tooltipExtra:", source)
 
+    def test_chartjs_hbars_never_receive_svg_gradient_urls(self):
+        source = SOURCE.read_text(encoding="utf-8")
+        for gradient in ("gA", "gB", "gC"):
+            self.assertNotIn(f"color:'url(#{gradient})'", source)
+
 
 if __name__ == "__main__":
     unittest.main()
