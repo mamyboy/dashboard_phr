@@ -182,11 +182,20 @@
   .prov-zone{position:relative;margin:0 0 15px;padding:15px;border:1px solid #b9d6ff;border-radius:20px;background:linear-gradient(135deg,#e8f2ff 0%,#f3efff 52%,#e7faef 100%);box-shadow:0 4px 0 #d2e2f5;overflow:hidden}
   .prov-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:12px}.prov-head h2{margin:2px 0;font-size:18px;letter-spacing:-.025em}.prov-head p{margin:0;color:#5d6472;font-size:10.5px}.prov-stamp{flex:0 0 auto;padding:7px 10px;border-radius:999px;background:#171720;color:#fff;font-size:9.5px;font-weight:750}
   .prov-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:9px}.prov-kpi{min-height:88px;padding:11px 12px;border:1px solid rgba(23,23,32,.1);border-radius:15px;background:rgba(255,255,255,.86);box-shadow:0 2px 0 rgba(23,23,32,.07)}.prov-kpi .lab{font-size:8.5px;font-weight:800;letter-spacing:.07em;color:#667085;text-transform:uppercase}.prov-kpi .val{display:block;margin:5px 0 2px;font-size:23px;font-weight:820;letter-spacing:-.04em;color:#171720}.prov-kpi small{display:block;font-size:9px;color:#667085;line-height:1.35}.prov-note{margin:10px 0 0;padding:9px 11px;border-radius:11px;background:rgba(255,255,255,.72);color:#344054;font-size:10.5px;line-height:1.5}.prov-note b{color:#5925dc}
+  .response-card{background:linear-gradient(145deg,#fff 0%,#f8fff9 58%,#fffaf0 100%)}
+  .response-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:2px 0 12px}
+  .response-kpi{min-height:78px;padding:10px 12px;border:1px solid rgba(23,23,32,.1);border-radius:15px;background:#fff;box-shadow:0 2px 0 rgba(23,23,32,.07)}
+  .response-kpi:nth-child(1){background:#e8e0ff}.response-kpi:nth-child(2){background:#dcf7e8}.response-kpi:nth-child(3){background:#dff2ff}.response-kpi:nth-child(4){background:#ffe7e7}
+  .response-kpi .lab{display:block;font-size:8.5px;font-weight:800;letter-spacing:.07em;color:#615d70;text-transform:uppercase}.response-kpi .val{display:block;margin:4px 0 1px;font-size:23px;font-weight:820;line-height:1.1;color:#171720}.response-kpi small{display:block;font-size:9px;color:#67627a}
+  .response-toolbar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:0 0 8px}.response-toolbar .filter-label{margin-right:2px}
+  .response-mode{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:7px 11px;border:1px solid #ded7ca;border-radius:999px;background:#fff;color:#4b4742;font:inherit;font-size:10.5px;font-weight:700;cursor:pointer}
+  .response-mode:hover{border-color:#9f8df2}.response-mode.on{border-color:#171720;background:#171720;color:#fff;box-shadow:3px 3px 0 #c1b0ff}
+  .response-empty{display:grid;place-items:center;min-height:180px;padding:20px;border:1px dashed #d8d0c3;border-radius:14px;background:#fbfaf7;color:var(--mut);font-size:11px;text-align:center}
   @media(max-width:900px){
     body{padding:14px 12px 34px}.row{grid-template-columns:1fr}.hero{padding:20px}.hero-art{width:250px;min-width:220px}.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.icd-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
     .filterbar{align-items:stretch}.filterbar .controls{max-width:100%;flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-inline:contain;padding:2px 2px 6px;scrollbar-width:none}.filterbar .controls::-webkit-scrollbar{display:none}
     .pill,.chip,.btn{display:inline-flex;align-items:center;justify-content:center;min-height:40px;flex:0 0 auto}.search{min-height:40px}
-    .card h2{line-height:1.35;gap:6px;overflow-wrap:anywhere}.chart-powered{flex:0 0 auto}.scroll{max-width:100%;overscroll-behavior-inline:contain;-webkit-overflow-scrolling:touch}.prov-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .card h2{line-height:1.35;gap:6px;overflow-wrap:anywhere}.chart-powered{flex:0 0 auto}.scroll{max-width:100%;overscroll-behavior-inline:contain;-webkit-overflow-scrolling:touch}.prov-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.response-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
   }
   @media(max-width:680px){
     body{padding:8px 7px 28px;line-height:1.5}.hero{min-height:auto;align-items:flex-start;flex-direction:column;padding:18px 14px;border-radius:20px}.hero-copy{max-width:100%}.hero-art{width:100%;min-width:0;height:122px;align-self:center}.hero-art svg{width:min(100%,320px);height:128px}h1{font-size:25px}.sub{font-size:11.5px}.hero-meta{gap:6px}.live-status,.light-badge{font-size:10px}
@@ -194,13 +203,13 @@
     .kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.kpi{min-height:102px;padding:11px;border-radius:15px}.kpi .v{font-size:25px}.kpi .l{font-size:10px}.kpi-top{margin-bottom:7px}
     .card{padding:12px 10px;border-radius:16px;margin-bottom:10px}.card h2{font-size:12px;min-height:0;margin-bottom:9px;padding-bottom:9px;flex-wrap:wrap}.card h2::after{display:none}.chart-powered{margin-left:0;font-size:8px}
     .chartjs-box.chart-horizontal{overflow:hidden;padding-bottom:0;-webkit-overflow-scrolling:auto;overscroll-behavior-inline:auto}.chartjs-box.chart-horizontal .chart-stage{width:100%;min-width:0}
-    .mobile-category-key{display:grid;grid-template-columns:1fr;gap:4px;list-style:none;margin:7px 0 2px;padding:8px;border:1px dashed #ddd4c8;border-radius:10px;background:#fffdf8}.mobile-category-key li{display:grid;grid-template-columns:22px minmax(0,1fr);gap:6px;align-items:start;font-size:10px;line-height:1.35;color:#4d4842}.mobile-category-key b{display:grid;place-items:center;width:20px;height:20px;border-radius:6px;background:#eeeaff;color:#6246ea;font-size:9px}.mobile-category-key span{overflow-wrap:anywhere}
+    .mobile-category-key{display:grid;grid-template-columns:1fr;gap:4px;list-style:none;margin:7px 0 2px;padding:8px;border:1px dashed #ddd4c8;border-radius:10px;background:#fffdf8}.mobile-category-key li{display:grid;grid-template-columns:22px minmax(0,1fr);gap:6px;align-items:start;font-size:10px;line-height:1.35;color:#4d4842}.mobile-category-key b{display:grid;place-items:center;width:20px;height:20px;border-radius:6px;background:#eeeaff;color:#6246ea;font-size:9px}.mobile-category-key span{overflow-wrap:anywhere}.mobile-category-key small{display:block;margin-top:1px;color:#77716a;font-size:9px;line-height:1.35}
     .legend{font-size:9.5px;gap:7px 10px;margin-top:8px;padding-top:8px}.legend span{white-space:normal}.insight{font-size:11px;padding:9px 10px}.rep-day{padding:10px}.rep-sec{align-items:flex-start}.rep-item{white-space:normal;line-height:1.45}
     .search{width:100%;min-width:0;height:44px;font-size:16px}.scroll{border-radius:10px}.dsumwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}.dsumwrap table{min-width:620px}
     .icd-zone{margin:10px 0;padding:7px;border-radius:18px;box-shadow:0 4px 0 #dbe5f6}.icd-hero{padding:12px 10px 8px;gap:10px}.icd-hero h2{font-size:18px}.icd-hero p{font-size:10px}.icd-mark{width:56px;height:56px;border-radius:17px;font-size:15px;box-shadow:4px 4px 0 #98d9c2}.icd-kpis{gap:7px}.icd-kpi{min-height:82px;padding:10px;border-radius:14px}.icd-kpi .val{font-size:22px}.icd-kpi .lab{font-size:8px}.icd-kpi small{font-size:8.5px}.source-note{font-size:9px;line-height:1.45}.icd-unit-card td:nth-child(1){min-width:190px}.icd-unit-card td:nth-child(5){min-width:330px}.prov-zone{padding:11px;border-radius:17px}.prov-head{flex-direction:column;gap:7px}.prov-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.prov-kpi{min-height:82px;padding:10px}.prov-kpi .val{font-size:21px}
   }
   @media(max-width:480px){
-    .pill,.chip,.btn{min-height:44px}.chart-powered{display:none}.icd-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.icd-hero .eyebrow{font-size:8px;letter-spacing:.09em}.icd-mark{width:50px;height:50px}.card h2{font-size:11.5px}
+    .pill,.chip,.btn,.response-mode{min-height:44px}.chart-powered{display:none}.icd-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.icd-hero .eyebrow{font-size:8px;letter-spacing:.09em}.icd-mark{width:50px;height:50px}.card h2{font-size:11.5px}.response-toolbar{align-items:stretch}.response-toolbar .filter-label{width:100%}.response-mode{flex:1 1 calc(50% - 7px);padding-inline:8px}
   }
   @media(max-width:1024px){.row{grid-template-columns:1fr}}
   @media(max-width:768px){.filterbar .controls{scroll-snap-type:x proximity}.filterbar .pill,.filterbar .chip{scroll-snap-align:start}}
@@ -321,6 +330,19 @@
   <div class="insight a" id="ansInsight"></div>
 </div>
 
+<div class="card response-card">
+  <h2 class="g">🏥 มิติหน่วย 3 — ประสิทธิภาพการตอบกลับรายหน่วย <span class="chart-powered">Chart.js</span></h2>
+  <div class="response-kpis" id="unitResponseKpis"></div>
+  <div class="response-toolbar" role="group" aria-label="เลือกมุมมองการตอบกลับรายหน่วย">
+    <span class="filter-label">มุมมอง</span>
+    <button type="button" class="response-mode on" data-response-mode="answered" aria-pressed="true">ตอบกลับล่าสุด</button>
+    <button type="button" class="response-mode" data-response-mode="delta" aria-pressed="false">เพิ่มขึ้นรอบล่าสุด</button>
+    <button type="button" class="response-mode" data-response-mode="pending" aria-pressed="false">ยังไม่ตอบ</button>
+  </div>
+  <div class="chartbox" id="unitResponseChart"></div>
+  <div class="insight g" id="unitResponseInsight"></div>
+</div>
+
 <section class="icd-zone">
   <div class="icd-hero">
     <div>
@@ -417,7 +439,7 @@ const DATA = {"labels":["31/7/2026","1/8/2026","2/8/2026","3/8/2026","4/8/2026",
 const PROVINCE = {"source_file":"phr_masks_province_20260804_155003.csv","snapshot_iso":"2026-08-04T15:50:03","snapshot_label":"4/8/2026 15:50","province":{"rank":51,"province_code":"91","province_name":"สตูล","region_id":"12","region_name":"เขตสุขภาพที่ 12","masks":120,"encounters":120,"answered":17,"citizens":52,"hospitals":14,"districts":5,"matched":120,"unmatched":0,"match_rate_pct":100.0,"share_pct":0.6,"first_date_be":"25620329","last_date_be":"25690720","answer_rate":14.166666666666666,"cases_per_citizen":2.3076923076923075,"region_rank":4,"region_count":7,"national_count":77,"delta_masks":-10,"delta_citizens":-8,"delta_answered":-60},"region":{"id":"12","name":"เขตสุขภาพที่ 12","masks":1052,"answer_rate":22.81,"province_share_pct":11.41},"national":{"masks":19956,"answer_rate":22.06},"detail_aligned":false,"detail_latest_label":"11/8/2026","baseline_label":"11/8/2026","detail_totals":{"masks":130,"citizens":60,"answered":77},"detail_gap":{"masks":-10,"citizens":-8,"answered":-60},"detail_latest_time":"23:18"};
 const ICD10 = {"snapshot_date":"2026-08-04","source_note":"ถอดจากภาพสรุป 14 หน่วยบริการ รายการ diagnosis เป็นเฉพาะรหัสที่มองเห็นในภาพ","units":[{"code":"77707","name":"ศูนย์สุขภาพชุมชนกำแพง","district":"ละงู","reports":46,"encounters":46,"patients":10,"hidden_code_count":2,"diagnoses":[{"code":"Z718","count":23,"label":"การให้คำปรึกษาอื่นที่ระบุไว้"},{"code":"Z133","count":16,"label":"คัดกรองความผิดปกติทางจิตและพฤติกรรม"},{"code":"Z123","count":11,"label":"คัดกรองมะเร็งเต้านม"},{"code":"Z001","count":10,"label":"ตรวจสุขภาพเด็กตามปกติ"}]},{"code":"24672","name":"ศูนย์สุขภาพชุมชนศรีพิมาน","district":"เมืองสตูล","reports":17,"encounters":17,"patients":8,"hidden_code_count":0,"diagnoses":[{"code":"Z123","count":16,"label":"คัดกรองมะเร็งเต้านม"},{"code":"Z133","count":2,"label":"คัดกรองความผิดปกติทางจิตและพฤติกรรม"}]},{"code":"11403","name":"โรงพยาบาลควนกาหลง","district":"ควนกาหลง","reports":11,"encounters":11,"patients":3,"hidden_code_count":1,"diagnoses":[{"code":"Z123","count":5,"label":"คัดกรองมะเร็งเต้านม"},{"code":"Z133","count":2,"label":"คัดกรองความผิดปกติทางจิตและพฤติกรรม"},{"code":"Z714","count":2,"label":"ให้คำปรึกษาเกี่ยวกับการใช้แอลกอฮอล์"},{"code":"Z716","count":2,"label":"ให้คำปรึกษาเกี่ยวกับการใช้ยาสูบ"}]},{"code":"10746","name":"โรงพยาบาลสตูล","district":"เมืองสตูล","reports":10,"encounters":10,"patients":10,"hidden_code_count":0,"diagnoses":[{"code":"Z012","count":3,"label":"การตรวจทางนรีเวชตามปกติ"},{"code":"F329","count":1,"label":"ภาวะซึมเศร้า ไม่ระบุรายละเอียด"},{"code":"J019","count":1,"label":"ไซนัสอักเสบเฉียบพลัน ไม่ระบุรายละเอียด"},{"code":"K020","count":1,"label":"ฟันผุจำกัดอยู่ในชั้นเคลือบฟัน"}]},{"code":"09636","name":"โรงพยาบาลส่งเสริมสุขภาพตำบลบ้านในเมือง ตำบลละงู","district":"ละงู","reports":8,"encounters":8,"patients":4,"hidden_code_count":0,"diagnoses":[{"code":"Z138","count":5,"label":"คัดกรองโรคและความผิดปกติอื่นที่ระบุไว้"},{"code":"Z718","count":4,"label":"การให้คำปรึกษาอื่นที่ระบุไว้"},{"code":"Z133","count":3,"label":"คัดกรองความผิดปกติทางจิตและพฤติกรรม"},{"code":"Z123","count":2,"label":"คัดกรองมะเร็งเต้านม"}]},{"code":"09641","name":"โรงพยาบาลส่งเสริมสุขภาพตำบลน้ำผุด","district":"ละงู","reports":7,"encounters":7,"patients":2,"hidden_code_count":0,"diagnoses":[{"code":"Z123","count":4,"label":"คัดกรองมะเร็งเต้านม"},{"code":"Z108","count":3,"label":"ตรวจสุขภาพทั่วไปในประชากรกลุ่มอื่น"},{"code":"K045","count":1,"label":"โรคของเนื้อเยื่อในฟันและรอบปลายรากฟัน"},{"code":"M6268","count":1,"label":"ความผิดปกติของกล้ามเนื้อ ตำแหน่งอื่น"}]},{"code":"11402","name":"โรงพยาบาลควนโดน","district":"ควนโดน","reports":5,"encounters":5,"patients":3,"hidden_code_count":0,"diagnoses":[{"code":"E789","count":1,"label":"ความผิดปกติของเมแทบอลิซึมไลโปโปรตีน ไม่ระบุ"},{"code":"G439","count":1,"label":"ไมเกรน ไม่ระบุรายละเอียด"}]},{"code":"09604","name":"โรงพยาบาลส่งเสริมสุขภาพตำบลคลองขุด","district":"เมืองสตูล","reports":3,"encounters":3,"patients":3,"hidden_code_count":0,"diagnoses":[{"code":"Z123","count":3,"label":"คัดกรองมะเร็งเต้านม"}]},{"code":"09635","name":"โรงพยาบาลส่งเสริมสุขภาพตำบลบ้านหัวทราย ตำบลละงู","district":"ละงู","reports":3,"encounters":3,"patients":2,"hidden_code_count":0,"diagnoses":[{"code":"Z718","count":3,"label":"การให้คำปรึกษาอื่นที่ระบุไว้"},{"code":"Z099","count":1,"label":"ตรวจติดตามหลังการรักษาภาวะอื่น"},{"code":"Z133","count":1,"label":"คัดกรองความผิดปกติทางจิตและพฤติกรรม"}]},{"code":"11406","name":"โรงพยาบาลทุ่งหว้า","district":"ทุ่งหว้า","reports":3,"encounters":3,"patients":3,"hidden_code_count":0,"diagnoses":[{"code":"M170","count":1,"label":"ข้อเข่าเสื่อมปฐมภูมิ"},{"code":"S434","count":1,"label":"ข้อเคลื่อน เคล็ด และตึงบริเวณข้อไหล่"},{"code":"X5099","count":1,"label":"ออกแรงมากหรือเคลื่อนไหวซ้ำ"},{"code":"Z099","count":1,"label":"ตรวจติดตามหลังการรักษาภาวะอื่น"}]},{"code":"77708","name":"ศูนย์สุขภาพชุมชนพิมาน","district":"เมืองสตูล","reports":2,"encounters":2,"patients":2,"hidden_code_count":0,"diagnoses":[{"code":"U778","count":2,"label":"การส่งเสริมสุขภาพและการป้องกันโรค"},{"code":"U643","count":1,"label":"โรคและอาการของทางเดินหายใจ"},{"code":"U6680","count":1,"label":"โรคและอาการอื่น"}]},{"code":"09616","name":"โรงพยาบาลส่งเสริมสุขภาพตำบลตำมะลัง","district":"เมืองสตูล","reports":1,"encounters":1,"patients":1,"hidden_code_count":0,"diagnoses":[{"code":"Z131","count":1,"label":"คัดกรองเบาหวาน"},{"code":"Z133","count":1,"label":"คัดกรองความผิดปกติทางจิตและพฤติกรรม"},{"code":"Z136","count":1,"label":"คัดกรองโรคหัวใจและหลอดเลือด"}]},{"code":"09621","name":"โรงพยาบาลส่งเสริมสุขภาพตำบลควนโดน","district":"ควนโดน","reports":1,"encounters":1,"patients":1,"hidden_code_count":0,"diagnoses":[{"code":"L239","count":1,"label":"ผิวหนังอักเสบจากการสัมผัสแบบแพ้ ไม่ระบุสาเหตุ"},{"code":"M7910","count":1,"label":"ปวดกล้ามเนื้อหลายตำแหน่ง"},{"code":"R05","count":1,"label":"ไอ"}]},{"code":"77654","name":"โรงพยาบาลส่งเสริมสุขภาพตำบลคลองขุด (สาขา)","district":"เมืองสตูล","reports":1,"encounters":1,"patients":1,"hidden_code_count":0,"diagnoses":[{"code":"Z131","count":1,"label":"คัดกรองเบาหวาน"},{"code":"Z133","count":1,"label":"คัดกรองความผิดปกติทางจิตและพฤติกรรม"},{"code":"Z136","count":1,"label":"คัดกรองโรคหัวใจและหลอดเลือด"}]}]};
 const DIST_COLORS={'ละงู':'#635bff','เมืองสตูล':'#0a72ef','ควนกาหลง':'#f79009','ควนโดน':'#9b51e0','ทุ่งหว้า':'#12b76a'};
-const state={dist:'all', days:DATA.labels.map((_,i)=>i), theme:'light', sortKey:'name', sortDir:1, search:'', reportDay:-1};
+const state={dist:'all', days:DATA.labels.map((_,i)=>i), theme:'light', sortKey:'name', sortDir:1, search:'', reportDay:-1, responseMode:'answered'};
 const tip=document.getElementById('tip');
 function showTip(e,txt){tip.textContent=txt;tip.style.opacity=1;tip.style.left=(e.clientX+12)+'px';tip.style.top=(e.clientY+12)+'px';}
 function hideTip(){tip.style.opacity=0;}
@@ -666,14 +688,15 @@ function renderMobileCategoryKey(el,items){
   const old=document.querySelector(`[data-chart-key="${el.id}"]`);if(old)old.remove();
   if(!viewportProfile().phone)return;
   const list=document.createElement('ol');list.className='mobile-category-key';list.dataset.chartKey=el.id;list.setAttribute('aria-label','รายชื่อหมวดหมู่ในกราฟ');
-  items.forEach((item,n)=>{const li=document.createElement('li'),badge=document.createElement('b'),name=document.createElement('span');badge.textContent=String(n+1);name.textContent=item.name;li.append(badge,name);list.appendChild(li);});
+  items.forEach((item,n)=>{const li=document.createElement('li'),badge=document.createElement('b'),name=document.createElement('span');badge.textContent=String(n+1);name.textContent=item.name;if(item.keyDetail){const detail=document.createElement('small');detail.textContent=item.keyDetail;name.appendChild(detail);}li.append(badge,name);list.appendChild(li);});
   el.insertAdjacentElement('afterend',list);
 }
 function hbar(el,items){
   const p=viewportProfile(),maxChars=p.tablet?32:52,labels=items.map((i,n)=>p.phone?String(n+1):wrapChartLabel(i.name,maxChars));
   const maxLines=Math.max(1,...labels.map(l=>Array.isArray(l)?l.length:1)),row=p.phone?29+maxLines*9:(p.tablet?27+maxLines*8:24+maxLines*7),height=Math.max(p.phone?265:230,Math.min(760,items.length*row+50));
-  const vals=items.map(i=>i.val),colors=items.map((i,n)=>['#6246ea','#246bfd','#078a52','#f0a202','#e84d5b','#9a62db'][n%6]);
-  mountChart(el,{type:'bar',data:{labels,datasets:[{label:'ค่า',data:vals,backgroundColor:colors,borderRadius:p.phone?6:8,borderSkipped:false,barThickness:p.phone?13:16}]},options:{indexAxis:'y',layout:{padding:{top:6,right:p.phone?45:72,left:0,bottom:2}},scales:chartScales(true),plugins:{datalabels:{display:true,color:'#171720',anchor:'end',align:'right',clamp:true,clip:false,font:{size:p.phone?9:10,weight:'700'},formatter:(v,c)=>`${v}${items[c.dataIndex].extra?' '+items[c.dataIndex].extra:''}`},tooltip:{...chartTooltip(),callbacks:{title:c=>items[c[0].dataIndex].name,label:c=>`${c.raw} ${items[c.dataIndex].extra||''}`}}}}},height);
+  const palette=['#6246ea','#246bfd','#078a52','#f0a202','#e84d5b','#9a62db'];
+  const vals=items.map(i=>i.val),colors=items.map((i,n)=>i.color||palette[n%palette.length]);
+  mountChart(el,{type:'bar',data:{labels,datasets:[{label:'ค่า',data:vals,backgroundColor:colors,borderRadius:p.phone?6:8,borderSkipped:false,barThickness:p.phone?13:16}]},options:{indexAxis:'y',layout:{padding:{top:6,right:p.phone?45:72,left:0,bottom:2}},scales:chartScales(true),plugins:{datalabels:{display:true,color:'#171720',anchor:'end',align:'right',clamp:true,clip:false,font:{size:p.phone?9:10,weight:'700'},formatter:(v,c)=>`${v}${items[c.dataIndex].extra?' '+items[c.dataIndex].extra:''}`},tooltip:{...chartTooltip(),callbacks:{title:c=>items[c[0].dataIndex].name,label:c=>`${c.raw} ${items[c.dataIndex].tooltipExtra||items[c.dataIndex].extra||''}`}}}}},height);
   renderMobileCategoryKey(el,items);
 }
 function stacked(el,labels,distData){
@@ -797,6 +820,46 @@ function renderAns(){
   const ins4=document.getElementById('ins4');
   if(ins4)ins4.innerHTML=`<b>4. คุณภาพและตอบกลับ:</b> Match rate 100% ตลอด 4 วัน · วันล่าสุดตอบกลับ ${tAns}/${tEnc} (${rate}%)`;
 }
+function unitResponseMetrics(unit,latestIdx,baselineIdx){
+  const masks=unit.masks[latestIdx]||0,answered=unit.ans[latestIdx]||0;
+  const baselineAnswered=baselineIdx===null?null:(unit.ans[baselineIdx]||0);
+  return {unit,masks,answered,pending:Math.max(0,masks-answered),delta:baselineAnswered===null?null:answered-baselineAnswered,rate:masks?answered/masks*100:null,anomaly:answered>masks};
+}
+function clearUnitResponseChart(message){
+  const el=document.getElementById('unitResponseChart');
+  if(CHARTS[el.id]){CHARTS[el.id].destroy();delete CHARTS[el.id];}
+  const key=document.querySelector(`[data-chart-key="${el.id}"]`);if(key)key.remove();
+  el.className='chartbox';el.style.height='auto';el.innerHTML=`<div class="response-empty">${message}</div>`;
+}
+function renderUnitResponse(){
+  const idx=activeIdx(),latestIdx=idx[idx.length-1],baselineIdx=idx.length>1?idx[idx.length-2]:null;
+  const metrics=selUnits().map(u=>unitResponseMetrics(u,latestIdx,baselineIdx));
+  const active=metrics.filter(m=>m.masks>0),responding=active.filter(m=>m.answered>0).length;
+  const answered=active.reduce((s,m)=>s+m.answered,0),pending=active.reduce((s,m)=>s+m.pending,0);
+  const positiveDelta=baselineIdx===null?null:metrics.reduce((s,m)=>s+Math.max(0,m.delta||0),0);
+  const revisions=baselineIdx===null?0:metrics.filter(m=>(m.delta||0)<0).length,anomalies=metrics.filter(m=>m.anomaly).length;
+  document.getElementById('unitResponseKpis').innerHTML=`
+    <div class="response-kpi"><span class="lab">RESPONDING UNITS</span><b class="val">${responding}/${active.length}</b><small>หน่วยที่ตอบแล้ว</small></div>
+    <div class="response-kpi"><span class="lab">ANSWERED</span><b class="val">${answered}</b><small>ตอบกลับรวม ณ ${DATA.labels[latestIdx]}</small></div>
+    <div class="response-kpi"><span class="lab">NEW REPLIES</span><b class="val">${positiveDelta===null?'—':'+'+positiveDelta}</b><small>${baselineIdx===null?'ไม่มีฐานเปรียบเทียบ':'เทียบ '+DATA.labels[baselineIdx]}</small></div>
+    <div class="response-kpi"><span class="lab">PENDING</span><b class="val">${pending}</b><small>เคสที่ยังไม่ตอบ</small></div>`;
+  document.querySelectorAll('[data-response-mode]').forEach(button=>{const on=button.dataset.responseMode===state.responseMode;button.classList.toggle('on',on);button.setAttribute('aria-pressed',String(on));});
+  if(!active.length){clearUnitResponseChart('ไม่มีหน่วยบริการที่มีเคสในพื้นที่และช่วงวันที่เลือก');document.getElementById('unitResponseInsight').textContent='ไม่มีข้อมูลสำหรับคำนวณมิติการตอบกลับ';return;}
+  if(state.responseMode==='delta'&&baselineIdx===null){clearUnitResponseChart('เลือกอย่างน้อย 2 วันเพื่อดูจำนวนตอบกลับที่เพิ่มขึ้นจากรอบก่อน');document.getElementById('unitResponseInsight').textContent='มุมมองเพิ่มขึ้นรอบล่าสุดต้องมีข้อมูลอย่างน้อย 2 snapshot';return;}
+  const valueFor=m=>state.responseMode==='answered'?m.answered:state.responseMode==='delta'?Math.max(0,m.delta||0):m.pending;
+  const ranked=metrics.filter(m=>valueFor(m)>0).sort((a,b)=>valueFor(b)-valueFor(a)||(b.rate||0)-(a.rate||0)||a.unit.name.localeCompare(b.unit.name,'th'));
+  if(!ranked.length){const empty=state.responseMode==='delta'?'ไม่มีหน่วยบริการที่มีจำนวนตอบกลับเพิ่มขึ้นในรอบล่าสุด':state.responseMode==='pending'?'ทุกหน่วยตอบกลับครบแล้ว':'ยังไม่มีหน่วยบริการที่ตอบกลับ';clearUnitResponseChart(empty);document.getElementById('unitResponseInsight').textContent=empty;return;}
+  const items=ranked.slice(0,8).map(m=>{const rate=m.rate===null?'—':Math.round(m.rate*10)/10+'%';
+    const extra=`(${m.answered}/${m.masks})`,keyDetail=`ตอบ ${m.answered}/${m.masks} · ${rate}`;
+    const tooltipExtra=state.responseMode==='answered'?`ตอบ ${m.answered}/${m.masks} · ${rate}`:state.responseMode==='delta'?`ตอบเพิ่ม ${Math.max(0,m.delta||0)} · รวม ${m.answered}/${m.masks} · ${rate}`:`คงค้าง ${m.pending} · ตอบ ${m.answered}/${m.masks} · ${rate}`;
+    const color=state.responseMode==='pending'?'#e84d5b':m.rate===100?'#078a52':m.rate&&m.rate>0?'#d98b00':'#e84d5b';
+    return {name:m.unit.name,val:valueFor(m),extra,keyDetail:keyDetail,tooltipExtra:tooltipExtra,color};});
+  hbar(document.getElementById('unitResponseChart'),items);
+  const lead=ranked[0],leadValue=valueFor(lead),modeLabel=state.responseMode==='answered'?'ตอบกลับสูงสุด':state.responseMode==='delta'?'ตอบเพิ่มสูงสุด':'คงค้างสูงสุด';
+  const notes=[`${modeLabel}: ${lead.unit.name} ${leadValue} เคส`,`ตอบแล้ว ${answered}/${active.reduce((s,m)=>s+m.masks,0)} เคส · คงค้าง ${pending} เคส`];
+  if(revisions)notes.push(`พบ ${revisions} หน่วยที่ยอดตอบกลับลดลงจากการปรับข้อมูล`);if(anomalies)notes.push(`⚠️ พบ ${anomalies} หน่วยที่ answered มากกว่า masks`);
+  document.getElementById('unitResponseInsight').innerHTML=`<b>${DATA.labels[latestIdx]}:</b> ${notes.join(' · ')}`;
+}
 const ICD_CHAPTERS={Z:'ปัจจัยสุขภาพ/บริการ',U:'รหัสวัตถุประสงค์พิเศษ',M:'กล้ามเนื้อและกระดูก',K:'ระบบย่อยอาหาร/ช่องปาก',F:'จิตและพฤติกรรม',J:'ระบบหายใจ',E:'ต่อมไร้ท่อ/เมแทบอลิซึม',G:'ระบบประสาท',S:'การบาดเจ็บ',X:'สาเหตุภายนอก',L:'ผิวหนัง',R:'อาการและอาการแสดง'};
 function renderICD(){
   const units=ICD10.units.filter(u=>state.dist==='all'||u.district===state.dist);
@@ -840,19 +903,22 @@ function renderICD(){
 }
 function renderUnitTable(){
   let u=selUnits().slice();
-  const k=state.sortKey,dir=state.sortDir;
+  const k=state.sortKey,dir=state.sortDir,lastIdx=activeIdx().slice(-1)[0];
+  const metric=x=>unitResponseMetrics(x,lastIdx,null);
   u.sort((a,b)=>{
     if(k==='name')return dir*a.name.localeCompare(b.name,'th');
     if(k==='dist')return dir*a.dist.localeCompare(b.dist,'th');
-    if(k==='last')return dir*(a.last-b.last);
+    if(k==='last')return dir*(a.masks[lastIdx]-b.masks[lastIdx]);
+    if(k==='answered')return dir*(metric(a).answered-metric(b).answered);
+    if(k==='pending')return dir*(metric(a).pending-metric(b).pending);
+    if(k==='responseRate')return dir*((metric(a).rate??-1)-(metric(b).rate??-1));
     return 0;
   });
-  const head=['หน่วยบริการ','อำเภอ',...DATA.labels,'ล่าสุด','ตอบกลับ'].map((h,i)=>{
+  const head=['หน่วยบริการ','อำเภอ',...activeIdx().map(i=>DATA.labels[i]),'ล่าสุด','ตอบกลับ','ยังไม่ตอบ','อัตราตอบกลับ'].map((h,i)=>{
     const arr=state.sortKey===colName(i)?' <span class="arr">'+(state.sortDir>0?'▲':'▼')+'</span>':'';
     return '<th data-col="'+i+'">'+h+arr+'</th>';
   }).join('');
   document.querySelector('#unitTable thead').innerHTML='<tr>'+head+'</tr>';
-  const lastIdx=activeIdx().slice(-1)[0];
   const rows=u.map(x=>{
     const idx=activeIdx();
     let cells='';
@@ -866,10 +932,12 @@ function renderUnitTable(){
         else{txt='0';cls='c-flat';}}
       cells+='<td class="num '+cls+'">'+txt+'</td>';
     });
-    const an=x.ans[lastIdx]||0;
+    const response=metric(x),rate=response.rate===null?'—':Math.round(response.rate*10)/10+'%';
     return '<tr><td>'+x.name+'</td><td class="mut">'+x.dist+'</td>'+cells+
-      '<td class="num strong">'+x.last+'</td>'+
-      '<td class="num '+(an>0?'c-up':'c-flat')+'">'+an+'</td></tr>';
+      '<td class="num strong">'+response.masks+'</td>'+
+      '<td class="num '+(response.answered>0?'c-up':'c-flat')+'">'+response.answered+'</td>'+
+      '<td class="num '+(response.pending>0?'c-down':'c-flat')+'">'+response.pending+'</td>'+
+      '<td class="num '+(response.rate===100?'c-up':response.rate===0?'c-down':'c-flat')+'">'+rate+'</td></tr>';
   }).join('');
   document.querySelector('#unitTable tbody').innerHTML=rows;
   document.querySelectorAll('#unitTable th').forEach(th=>{
@@ -879,7 +947,7 @@ function renderUnitTable(){
   });
 }
 function colName(i){if(i===0)return 'name';if(i===1)return 'dist';
-  const idx=activeIdx();if(i-2<idx.length)return 'day';return 'last';}
+  const n=activeIdx().length;if(i-2<n)return 'day';if(i===n+2)return 'last';if(i===n+3)return 'answered';if(i===n+4)return 'pending';if(i===n+5)return 'responseRate';return 'last';}
 
 // ---- daily increase report ----
 function buildReportNav(){
@@ -942,11 +1010,12 @@ function buildControls(){
     dc.appendChild(b);
   });
   document.getElementById('unitSearch').oninput=e=>{state.search=e.target.value;renderUnitTable();};
+  document.querySelectorAll('[data-response-mode]').forEach(button=>{button.onclick=()=>{state.responseMode=button.dataset.responseMode;renderUnitResponse();};});
   // stack legend
   document.getElementById('stackLegend').innerHTML=DATA.districts.map(d=>`<span style="color:${DIST_COLORS[d]||'#94a3b8'}">■ ${d}</span>`).join('');
   buildReportNav();
 }
-function renderAll(){renderKPI();renderProvince();renderTrend();renderNet();renderStack();renderPareto();renderMom();renderRatio();renderAns();renderICD();renderUnitTable();renderReport();}
+function renderAll(){renderKPI();renderProvince();renderTrend();renderNet();renderStack();renderPareto();renderMom();renderRatio();renderAns();renderUnitResponse();renderICD();renderUnitTable();renderReport();}
 const responsiveController=new ResponsiveChartController({charts:CHARTS,rerender:renderAll});
 buildControls();renderAll();responsiveController.start();
 </script>
