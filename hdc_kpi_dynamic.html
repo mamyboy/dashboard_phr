@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>KPI สตูล 2569 — Dynamic Dashboard</title>
+<style>
+  :root{
+    --bg:#0f172a; --card:#1e293b; --card2:#273449; --txt:#e2e8f0; --muted:#94a3b8;
+    --green:#22c55e; --amber:#f59e0b; --red:#ef4444; --blue:#3b82f6; --purple:#a855f7; --line:#334155;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Sarabun','Prompt',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    background:var(--bg);color:var(--txt);padding:16px;line-height:1.5;-webkit-text-size-adjust:100%}
+  .wrap{max-width:1200px;margin:0 auto}
+  header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+  header h1{font-size:clamp(18px,5vw,26px);font-weight:700;color:#fff}
+  .header-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .badge{background:var(--purple);color:#fff;padding:2px 10px;border-radius:99px;font-size:12px}
+  .btn{background:var(--card2);color:var(--txt);border:1px solid var(--line);padding:8px 14px;border-radius:10px;font-size:13px;cursor:pointer;transition:.15s}
+  .btn:hover{background:var(--blue);border-color:var(--blue)}
+  .btn.active{background:var(--blue);border-color:var(--blue)}
+  .spinner{width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;display:inline-block;margin-left:8px;vertical-align:middle}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;padding:12px;background:var(--card);border:1px solid var(--line);border-radius:12px}
+  .filter-btn{background:var(--card2);border:1px solid var(--line);color:var(--txt);padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer}
+  .filter-btn.active,.filter-btn:hover{background:var(--blue);border-color:var(--blue)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;align-items:start}
+  .kpi{background:var(--card);border-radius:14px;padding:16px;padding-top:14px;border:1px solid var(--line);height:100%;display:flex;flex-direction:column}
+  .kpi h3{font-size:14px;font-weight:600;color:#fff;margin-bottom:8px;line-height:1.35;min-height:38px;word-break:break-word;overflow-wrap:anywhere}
+  .kpi .statusline{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+  .kpi .status{font-size:11px;padding:3px 10px;border-radius:99px;font-weight:700;white-space:nowrap}
+  .s-ok{background:rgba(34,197,94,.15);color:var(--green)}
+  .s-bad{background:rgba(239,68,68,.15);color:var(--red)}
+  .s-na{background:rgba(148,163,184,.15);color:var(--muted)}
+  .kpi .target-txt{font-size:11px;color:var(--muted);white-space:nowrap}
+  .kpi .val{font-size:clamp(26px,7vw,36px);font-weight:800;line-height:1}
+  .kpi .bar{height:6px;background:var(--card2);border-radius:99px;margin-top:10px;overflow:hidden}
+  .kpi .bar > i{display:block;height:100%;border-radius:99px}
+  .mini{display:flex;justify-content:flex-start;flex-wrap:wrap;gap:4px;margin-top:auto;padding-top:10px}
+  .mini span{padding:2px 6px;background:var(--card2);border-radius:4px;font-size:10.5px}
+  .chart{margin-top:10px;height:140px}
+  .chart svg{width:100%;height:100%;display:block}
+  .chart .bar{transition:height .3s ease}
+  .chart .bar:hover{opacity:.8}
+  .chart .label{font-size:9px;fill:var(--muted);text-anchor:middle}
+  .chart .value{font-size:9px;fill:var(--txt);font-weight:600;text-anchor:middle}
+  .chart .target-line{stroke:var(--amber);stroke-dasharray:4 2;stroke-width:1}
+  footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px;padding-top:16px;border-top:1px solid var(--line)}
+  .empty{text-align:center;color:var(--muted);padding:40px 16px;grid-column:1/-1}
+  @media(max-width:480px){body{padding:10px}.grid{gap:10px}.kpi{padding:14px}}
+  [x-cloak]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap" x-data="app()" x-init="init()">
+  <header>
+    <h1>KPI กระทรวง — จังหวัดสตูล</h1>
+    <div class="header-right">
+      <span class="badge" x-text="`${meta.province} · ${meta.year} · เขต ${meta.health_zone}`"></span>
+      <span class="badge" x-text="`${indicators.length} ตัวชี้วัด`"></span>
+      <button class="btn" @click="load()" :disabled="loading">
+        <span x-show="!loading">🔄 Refresh</span>
+        <span class="spinner" x-show="loading"></span>
+      </button>
+    </div>
+  </header>
+
+  <div class="filters">
+    <button class="filter-btn" :class="{active: activeFilter==='all'}" @click="activeFilter='all'">ทั้งหมด</button>
+    <template x-for="cat in categories" :key="cat">
+      <button class="filter-btn" :class="{active: activeFilter===cat}" @click="activeFilter=cat" x-text="cat"></button>
+    </template>
+  </div>
+
+  <div class="grid">
+    <template x-for="item in filtered" :key="item.id">
+      <div class="kpi">
+        <h3 x-text="item.name"></h3>
+        <div class="statusline">
+          <span class="target-txt" x-text="item.target != null ? 'เป้า ' + item.target + '%' : 'ไม่ระบุเป้า'"></span>
+          <template x-if="item.agg != null && item.target != null">
+            <span class="status" :class="isHigherBetter(item.name) ? (item.agg >= item.target ? 's-ok' : 's-bad') : (item.agg <= item.target ? 's-ok' : 's-bad')" x-text="isHigherBetter(item.name) ? (item.agg >= item.target ? 'ผ่าน' : 'ไม่ผ่าน') : (item.agg <= item.target ? 'ผ่าน' : 'ไม่ผ่าน')"></span>
+          </template>
+          <template x-if="item.agg == null || item.target == null">
+            <span class="status s-na">ไม่มีเป้า</span>
+          </template>
+        </div>
+        <div class="val" :style="'color:' + (item.agg==null?'var(--muted)':(isHigherBetter(item.name)?(item.agg>=item.target?'var(--green)':'var(--red)'):(item.agg<=item.target?'var(--green)':'var(--red)')))">
+          <span x-text="item.agg != null ? item.agg : '—'"></span><span style="font-size:14px;color:var(--muted)" x-show="item.agg!=null">%</span>
+        </div>
+        <div class="bar"><i :style="'width:' + ((item.agg!=null&&item.target!=null)?Math.min(100,item.agg/Math.max(item.target*1.2,1)*100):50) + '%;background:' + (item.agg==null?'var(--muted)':(isHigherBetter(item.name)?(item.agg>=item.target?'var(--green)':'var(--red)'):(item.agg<=item.target?'var(--green)':'var(--red)')))"></i></div>
+        <div class="mini">
+          <template x-for="d in item.data" :key="d[0]">
+            <span x-text="d[0].slice(0,7) + ': ' + d[1]"></span>
+          </template>
+        </div>
+        <div class="chart" x-html="renderChart(item)"></div>
+      </div>
+    </template>
+    <div class="empty" x-show="filtered.length === 0">ไม่พบตัวชี้วัดในหมวดนี้</div>
+  </div>
+
+  <footer>
+    <span x-text="meta.source"></span> · อัปเดต <span x-text="meta.updated"></span> ·
+    <button class="btn" @click="load()" :disabled="loading" style="margin-left:8px">🔄 รีโหลด</button>
+  </footer>
+</div>
+
+<!-- Alpine.js v3.13.3 -->
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js" defer></script>
+<script>
+// ============================================================
+// App Store (Alpine component)
+// ============================================================
+function app() {
+  return {
+    meta: {},
+    indicators: [],
+    categories: [],
+    activeFilter: 'all',
+    loading: false,
+
+    get filtered() {
+      if (this.activeFilter === 'all') return this.indicators;
+      return this.indicators.filter(i => i.category === this.activeFilter);
+    },
+
+    updateCategories() {
+      this.categories = [...new Set(this.indicators.map(i => i.category).filter(Boolean))].sort();
+    },
+
+    async init() {
+      this.loadInlineData();
+      await this.load();
+    },
+
+    loadInlineData() {
+      // Inline data embedded at build time
+      const inlineData = {"meta": {"province": "สตูล", "year": 2569, "health_zone": 12, "updated": "2026-08-11T14:00:00+07:00", "source": "HDC standard-report-detail"}, "indicators": [{"id": "1.1_screen", "name": "ร้อยละการคัดกรอง (DSPM)", "target": 90, "agg": 78.27, "data": [["เมืองสตูล", 76.26], ["ควนโดน", 78.41], ["ควนกาหลง", 79.51], ["ท่าแพ", 79.98], ["ละงู", 78.78], ["ทุ่งหว้า", 81.52], ["มะนัง", 77.52]], "category": "ส่งเสริมป้องกัน > อนามัยแม่และเด็ก"}, {"id": "1.1_late", "name": "ร้อยละพบสงสัยล่าช้า (DSPM)", "target": 20, "agg": 24.24, "data": [["เมืองสตูล", 18.63], ["ควนโดน", 27.31], ["ควนกาหลง", 28.02], ["ท่าแพ", 26.61], ["ละงู", 24.31], ["ทุ่งหว้า", 33.6], ["มะนัง", 24.91]], "category": "ส่งเสริมป้องกัน > อนามัยแม่และเด็ก"}, {"id": "1.1_develop", "name": "ร้อยละพัฒนาการสมวัย (DSPM)", "target": 88, "agg": 75.48, "data": [["เมืองสตูล", 73.48], ["ควนโดน", 76.11], ["ควนกาหลง", 76.87], ["ท่าแพ", 77.06], ["ละงู", 76.26], ["ทุ่งหว้า", 79.13], ["มะนัง", 72.33]], "category": "ส่งเสริมป้องกัน > อนามัยแม่และเด็ก"}, {"id": "2238b787", "name": "ร้อยละของเด็กอายุ 0-5 ปี มีพัฒนาการสมวัย (DSPM)", "target": "90.00", "agg": null, "data": [["เมืองสตูล", 76.26], ["ควนโดน", 78.41], ["ควนกาหลง", 79.51], ["ท่าแพ", 79.98], ["ละงู", 78.78], ["ทุ่งหว้า", 81.52], ["มะนัง", 77.52]], "category": "ส่งเสริมป้องกัน > อนามัยแม่และเด็ก"}, {"id": "7ac059f4", "name": "อัตราตายของผู้ป่วยใน โรคหลอดเลือดสมอง", "target": "7.00", "agg": 3.2, "data": [["เมืองสตูล", 4.83], ["ควนโดน", 8.33], ["ควนกาหลง", 4.35], ["ท่าแพ", 10], ["ละงู", 0.99], ["ทุ่งหว้า", 21], ["มะนัง", 28]], "category": "โรคเรื้อรัง > อัตราตาย"}, {"id": "0acbbb84", "name": "อัตราตายทารกแรกเกิด อายุน้อยกว่าหรือเท่ากับ 28 วัน", "target": "3.60", "agg": 1.84, "data": [["เมืองสตูล", 1.54], ["ควนโดน", 23], ["ควนกาหลง", 35], ["ท่าแพ", 1], ["ละงู", 188], ["ทุ่งหว้า", 47], ["มะนัง", 44]], "category": "โรคเรื้อรัง > อัตราตาย"}, {"id": "8f3d7d8e", "name": "ร้อยละของผู้ป่วยนอกที่มารับบริการในระดับปฐมภูมิได้รับการรักษาด้วยการแพทย์แผนไทยและการแพทย์ทางเลือก ", "target": "35.00", "agg": 50.23, "data": [["เมืองสตูล", 52.13], ["ควนโดน", 59.88], ["ควนกาหลง", 45.18], ["ท่าแพ", 56.91], ["ละงู", 33.46], ["ทุ่งหว้า", 70.08], ["มะนัง", 59.69]], "category": "บริการ > การแพทย์แผนไทย"}, {"id": "9fb3a84c", "name": "อัตราตายของผู้ป่วยโรคกล้ามเนื้อหัวใจตายเฉียบพลันชนิด STEMI", "target": "9.00", "agg": 0.75, "data": [["เมืองสตูล", 50], ["ควนโดน", 24], ["ควนกาหลง", 8], ["ท่าแพ", 16], ["ละงู", 3.45], ["ทุ่งหว้า", 5], ["มะนัง", 2]], "category": "โรคเรื้อรัง > โรคหัวใจ"}, {"id": "WaTHdmG7", "name": "ร้อยละผู้ป่วยไตเรื้อรัง stage 5 รายใหม่ ที่ลดลงจากปีงบประมาณก่อนหน้า", "target": null, "agg": 89, "data": [["เมืองสตูล", 33], ["ควนโดน", 5], ["ควนกาหลง", 8], ["ท่าแพ", 9], ["ละงู", 25], ["ทุ่งหว้า", 6], ["มะนัง", 3]], "category": "โรคเรื้อรัง > โรคไต"}, {"id": "6mun4l1e", "name": "ร้อยละของผู้ป่วยโรคเบาหวาน ได้รับการตรวจ HbA1c ซ้ำภายใน 90 วัน", "target": null, "agg": 3.66, "data": [["เมืองสตูล", 1.5], ["ควนโดน", 6.41], ["ควนกาหลง", 1.71], ["ท่าแพ", 2.38], ["ละงู", 5.02], ["ทุ่งหว้า", 4.55], ["มะนัง", 2.04]], "category": "โรคเรื้อรัง > เบาหวาน (ตรวจติดตาม)"}, {"id": "m7rdkm3q", "name": "ร้อยละของผู้ป่วยโรคเบาหวาน ได้รับการตรวจ LDL-Cholesterol ซ้ำภายใน 90 วัน", "target": null, "agg": 3.41, "data": [["เมืองสตูล", 2.22], ["ควนโดน", 2.37], ["ควนกาหลง", 2.62], ["ท่าแพ", 2.64], ["ละงู", 0.89], ["ทุ่งหว้า", 4.42], ["มะนัง", 3.19]], "category": "โรคเรื้อรัง > เบาหวาน (ตรวจติดตาม)"}, {"id": "a6an5mcv", "name": "ร้อยละผู้ป่วยโรคเบาหวาน ได้รับการตรวจ HbA1c อย่างน้อยปีละ 1 ครั้ง", "target": null, "agg": 78.57, "data": [["เมืองสตูล", 73.98], ["ควนโดน", 85.58], ["ควนกาหลง", 82.47], ["ท่าแพ", 81.16], ["ละงู", 77.62], ["ทุ่งหว้า", 79.15], ["มะนัง", 74.26]], "category": "โรคเรื้อรัง > เบาหวาน (ตรวจติดตาม)"}, {"id": "66js79di", "name": "ร้อยละของผู้ป่วยโรคเบาหวานได้รับการตรวจ LDL-Cholesterol อย่างน้อยปีละ 1 ครั้ง", "target": null, "agg": 79.41, "data": [["เมืองสตูล", 76.75], ["ควนโดน", 85.06], ["ควนกาหลง", 86.06], ["ท่าแพ", 79.66], ["ละงู", 84.3], ["ทุ่งหว้า", 79.27], ["มะนัง", 73.97]], "category": "โรคเรื้อรัง > เบาหวาน (ตรวจติดตาม)"}, {"id": "avxi1awp", "name": "ร้อยละของผู้ป่วยโรคเบาหวาน ได้รับการตรวจ Creatinine อย่างน้อยปีละ 1 ครั้ง", "target": null, "agg": 83.48, "data": [["เมืองสตูล", 81.14], ["ควนโดน", 88.83], ["ควนกาหลง", 90.28], ["ท่าแพ", 83.77], ["ละงู", 86.3], ["ทุ่งหว้า", 83.76], ["มะนัง", 77.87]], "category": "โรคเรื้อรัง > เบาหวาน (ตรวจติดตาม)"}, {"id": "0eqewut9", "name": "ร้อยละของผู้มารับบริการได้รับการตรวจ Total Cholesterol ซ้ำภายใน 90 วัน", "target": null, "agg": 3.17, "data": [["เมืองสตูล", 3.76], ["ควนโดน", 1.46], ["ควนกาหลง", 2.36], ["ท่าแพ", 2.3], ["ละงู", 1.72], ["ทุ่งหว้า", 3.97], ["มะนัง", 2.83]], "category": "โรคเรื้อรัง > ความดัน/ไขมัน"}, {"id": "igizblqv", "name": "ร้อยละของผู้มารับบริการได้รับการตรวจ Triglycerides ซ้ำภายใน 90 วัน", "target": null, "agg": 3.13, "data": [["เมืองสตูล", 3.18], ["ควนโดน", 1.51], ["ควนกาหลง", 3.03], ["ท่าแพ", 2.5], ["ละงู", 1.78], ["ทุ่งหว้า", 4.25], ["มะนัง", 1.2]], "category": "โรคเรื้อรัง > ความดัน/ไขมัน"}]};
+      this.meta = inlineData.meta || {};
+      this.indicators = inlineData.indicators || [];
+      this.normalizeIndicators();
+      this.updateCategories();
+    },
+
+    normalizeIndicators() {
+      this.indicators.forEach(i => {
+        if (i.target != null) i.target = Number(i.target);
+        if (i.agg != null) i.agg = Number(i.agg);
+      });
+    },
+
+    updateCategories() {
+      this.categories = [...new Set(this.indicators.map(i => i.category).filter(Boolean))].sort();
+    },
+
+    async load() {
+      this.loading = true;
+      try {
+        const res = await fetch('./kpi_data.json?v=' + Date.now(), {cache: 'no-store'});
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const json = await res.json();
+        this.meta = json.meta || this.meta;
+        this.indicators = json.indicators || this.indicators;
+        this.normalizeIndicators();
+        this.updateCategories();
+      } catch (e) {
+        console.log('Online fetch skipped (offline mode):', e.message);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    normalizeIndicators() {
+      this.indicators.forEach(i => {
+        if (i.target != null) i.target = Number(i.target);
+        if (i.agg != null) i.agg = Number(i.agg);
+      });
+    },
+
+    isHigherBetter(name) {
+      return !/อัตราตาย|อัตราการฆ่า|ต่ำกว่า|ลดลง/.test(name);
+    },
+
+    sortedData(data) {
+      return [...data].sort((a, b) => b[1] - a[1]);
+    },
+
+    renderChart(item) {
+      if (!item.data || !item.data.length) return '';
+      const sorted = this.sortedData(item.data);
+      const maxVal = Math.max(...sorted.map(d => d[1]));
+      const hasTarget = item.target != null;
+      const targetY = hasTarget ? (item.target / Math.max(maxVal, item.target) * 100) : 0;
+      const w = 100 / sorted.length;
+      const barW = w * 0.7;
+      const gap = w * 0.3;
+      const isHigher = this.isHigherBetter(item.name);
+      const colors = sorted.map((d, i) => {
+        if (!hasTarget) return 'var(--blue)';
+        const pass = isHigher ? d[1] >= item.target : d[1] <= item.target;
+        return pass ? 'var(--green)' : 'var(--red)';
+      });
+      let svg = `<svg viewBox="0 0 ${sorted.length * 100} 140" preserveAspectRatio="none">`;
+      // Target line
+      if (hasTarget) {
+        const ty = 140 - targetY * 1.3;
+        svg += `<line class="target-line" x1="0" y1="${ty}" x2="${sorted.length * 100}" y2="${ty}"/>`;
+      }
+      // Bars
+      sorted.forEach((d, i) => {
+        const h = (d[1] / Math.max(maxVal, item.target || 1) * 100) * 1.3;
+        const x = i * 100 + gap + barW/2 * 100/100 * 100; // adjusted
+        const bx = i * 100 + 15; // simpler: 15px from left of each 100px cell
+        const bw = 70; // bar width
+        const by = 140 - h;
+        const label = d[0].slice(0, 6);
+        svg += `<rect class="bar" x="${bx}" y="${by}" width="${bw}" height="${h}" fill="${colors[i]}" rx="3"/>`;
+        svg += `<text class="label" x="${bx + bw/2}" y="135">${label}</text>`;
+        svg += `<text class="value" x="${bx + bw/2}" y="${by - 4}">${d[1]}</text>`;
+      });
+      svg += `</svg>`;
+      return svg;
+    }
+  };
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>KPI สตูล 2569 — Dashboard</title>
+<style>
+/* shadcn/ui Design Tokens - Dark Default */
+:root{
+  --radius:0.625rem;
+  --background:222.2 84% 4.9%;--foreground:210 40% 98%;
+  --card:222.2 84% 4.9%;--card-foreground:210 40% 98%;
+  --popover:222.2 84% 4.9%;--popover-foreground:210 40% 98%;
+  --primary:217.2 91.2% 59.8%;--primary-foreground:222.2 47.4% 11.2%;
+  --secondary:217.2 32.6% 17.5%;--secondary-foreground:210 40% 98%;
+  --muted:217.2 32.6% 17.5%;--muted-foreground:215 20.2% 65.1%;
+  --accent:217.2 32.6% 17.5%;--accent-foreground:210 40% 98%;
+  --destructive:0 62.8% 30.6%;--destructive-foreground:210 40% 98%;
+  --success:142.1 76.2% 36.3%;--success-foreground:355.7 100% 97.3%;
+  --warning:47.9 95.8% 53.1%;--warning-foreground:26 83.3% 14.1%;
+  --border:217.2 32.6% 17.5%;--input:217.2 32.6% 17.5%;--ring:224.3 76.3% 48%;
+  --chart-1:217.2 91.2% 59.8%;--chart-2:142.1 76.2% 36.3%;--chart-3:47.9 95.8% 53.1%;
+  --chart-4:0 84.2% 60.2%;--chart-5:262.1 83.3% 57.8%;
+}
+.light{
+  --background:0 0% 100%;--foreground:222.2 84% 4.9%;
+  --card:0 0% 100%;--card-foreground:222.2 84% 4.9%;
+  --popover:0 0% 100%;--popover-foreground:222.2 84% 4.9%;
+  --primary:221.2 83.2% 53.3%;--primary-foreground:210 40% 98%;
+  --secondary:210 40% 96.1%;--secondary-foreground:222.2 47.4% 11.2%;
+  --muted:210 40% 96.1%;--muted-foreground:215.4 16.3% 46.9%;
+  --accent:210 40% 96.1%;--accent-foreground:222.2 47.4% 11.2%;
+  --destructive:0 84.2% 60.2%;--destructive-foreground:210 40% 98%;
+  --success:142.1 76.2% 36.3%;--success-foreground:355.7 100% 97.3%;
+  --warning:47.9 95.8% 53.1%;--warning-foreground:26 83.3% 14.1%;
+  --border:214.3 31.8% 91.4%;--input:214.3 31.8% 91.4%;--ring:221.2 83.2% 53.3%;
+}
+*,*:before,*:after{box-sizing:border-box}
+*{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+html{font-size:16px}
+@media (max-width:640px){html{font-size:14px}}
+@media (min-width:1400px){html{font-size:15px}}
+body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans Thai',sans-serif;background:hsl(var(--background));color:hsl(var(--foreground));line-height:1.5;min-height:100vh;transition:background 0.2s ease,color 0.2s ease}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;font-size:inherit;cursor:pointer;border:none;background:none}
+input,select,textarea{font-family:inherit;font-size:inherit}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* shadcn/ui Components */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:0.5rem;white-space:nowrap;border-radius:var(--radius);padding:0.5rem 1rem;font-size:0.875rem;font-weight:500;transition:all 150ms ease;outline:none}
+.btn:focus-visible{outline:2px solid hsl(var(--ring));outline-offset:2px}
+.btn:disabled{opacity:0.5;pointer-events:none}
+.btn-default{background:hsl(var(--primary));color:hsl(var(--primary-foreground));box-shadow:0 1px 2px rgba(0,0,0,0.05)}
+.btn-default:hover:not(:disabled){background:hsl(var(--primary)/0.9)}
+.btn-outline{border:1px solid hsl(var(--border));background:transparent;color:hsl(var(--foreground))}
+.btn-outline:hover:not(:disabled){background:hsl(var(--accent));color:hsl(var(--accent-foreground))}
+.btn-ghost{background:transparent;color:hsl(var(--foreground))}
+.btn-ghost:hover:not(:disabled){background:hsl(var(--accent));color:hsl(var(--accent-foreground))}
+.btn-destructive{background:hsl(var(--destructive));color:hsl(var(--destructive-foreground))}
+.btn-destructive:hover:not(:disabled){background:hsl(var(--destructive)/0.9)}
+.btn-success{background:hsl(var(--success));color:hsl(var(--success-foreground))}
+.btn-warning{background:hsl(var(--warning));color:hsl(var(--warning-foreground))}
+.btn-sm{padding:0.375rem 0.75rem;font-size:0.8125rem}
+.btn-lg{padding:0.625rem 1.25rem;font-size:1rem}
+.btn-icon{padding:0.5rem}
+.btn-xs{padding:0.25rem 0.5rem;font-size:0.75rem}
+
+.input{display:flex;width:100%;border-radius:var(--radius);border:1px solid hsl(var(--input));background:hsl(var(--background));padding:0.5rem 0.75rem;font-size:0.875rem;color:hsl(var(--foreground));outline:none;transition:all 150ms ease}
+.input::placeholder{color:hsl(var(--muted-foreground))}
+.input:focus{outline:2px solid hsl(var(--ring));outline-offset:1px;border-color:transparent}
+
+.card{border-radius:var(--radius);border:1px solid hsl(var(--border));background:hsl(var(--card));color:hsl(var(--card-foreground));overflow:hidden;transition:all 200ms ease}
+.card-header{padding:1.25rem 1.5rem;border-bottom:1px solid hsl(var(--border))}
+.card-title{font-size:1.125rem;font-weight:600;line-height:1.25;color:hsl(var(--card-foreground))}
+.card-description{font-size:0.875rem;color:hsl(var(--muted-foreground));margin-top:0.25rem}
+.card-content{padding:1.5rem}
+.card-footer{padding:1rem 1.5rem;border-top:1px solid hsl(var(--border));display:flex;align-items:center;gap:0.5rem}
+
+.badge{display:inline-flex;align-items:center;border-radius:9999px;padding:0.25rem 0.625rem;font-size:0.75rem;font-weight:500;white-space:nowrap;transition:all 150ms ease}
+.badge-default{background:hsl(var(--primary));color:hsl(var(--primary-foreground))}
+.badge-secondary{background:hsl(var(--secondary));color:hsl(var(--secondary-foreground))}
+.badge-outline{border:1px solid hsl(var(--border));background:transparent}
+.badge-success{background:hsl(var(--success)/0.15);color:hsl(var(--success));border:1px solid hsl(var(--success)/0.3)}
+.badge-destructive{background:hsl(var(--destructive)/0.15);color:hsl(var(--destructive));border:1px solid hsl(var(--destructive)/0.3)}
+.badge-warning{background:hsl(var(--warning)/0.15);color:hsl(var(--warning));border:1px solid hsl(var(--warning)/0.3)}
+
+.separator{background:hsl(var(--border));border:0;height:1px;width:100%}
+.separator-v{width:1px;height:100%}
+
+.tooltip{position:relative}
+.tooltip-content{position:absolute;z-index:50;padding:0.5rem 0.75rem;font-size:0.75rem;border-radius:var(--radius);background:hsl(var(--popover));color:hsl(var(--popover-foreground));border:1px solid hsl(var(--border));box-shadow:0 10px 38px -10px rgba(0,0,0,0.3),0 10px 20px -15px rgba(0,0,0,0.2);white-space:nowrap;opacity:0;visibility:hidden;transition:all 150ms ease;pointer-events:none}
+.tooltip:hover .tooltip-content,.tooltip:focus-within .tooltip-content{opacity:1;visibility:visible}
+.tooltip-content-bottom{bottom:100%;left:50%;transform:translateX(-50%) translateY(-4px);margin-bottom:4px}
+.tooltip-content-top{top:100%;left:50%;transform:translateX(-50%) translateY(4px);margin-top:4px}
+.tooltip-content-right{left:100%;top:50%;transform:translateY(-50%) translateX(4px);margin-left:4px}
+.tooltip-content-left{right:100%;top:50%;transform:translateY(-50%) translateX(-4px);margin-right:4px}
+
+.dropdown{position:relative;display:inline-flex}
+.dropdown-content{position:absolute;z-index:50;min-width:12rem;padding:0.5rem;border-radius:var(--radius);background:hsl(var(--popover));color:hsl(var(--popover-foreground));border:1px solid hsl(var(--border));box-shadow:0 10px 38px -10px rgba(0,0,0,0.3),0 10px 20px -15px rgba(0,0,0,0.2);opacity:0;visibility:hidden;transform:translateY(-8px);transition:all 150ms ease}
+.dropdown.open .dropdown-content{opacity:1;visibility:visible;transform:translateY(0)}
+.dropdown-item{display:flex;align-items:center;gap:0.5rem;width:100%;padding:0.5rem 0.75rem;border-radius:calc(var(--radius) - 2px);font-size:0.875rem;color:hsl(var(--popover-foreground));transition:all 100ms ease}
+.dropdown-item:hover{background:hsl(var(--accent));color:hsl(var(--accent-foreground))}
+.dropdown-item:focus-visible{outline:2px solid hsl(var(--ring));outline-offset:-2px}
+.dropdown-divider{height:1px;background:hsl(var(--border));margin:0.5rem 0}
+.dropdown-label{padding:0.5rem 0.75rem;font-size:0.75rem;font-weight:600;color:hsl(var(--muted-foreground));text-transform:uppercase;letter-spacing:0.05em}
+
+.skeleton{background:linear-gradient(90deg,hsl(var(--muted)) 25%,hsl(var(--accent)) 37%,hsl(var(--muted)) 63%);background-size:400% 100%;animation:shimmer 1.5s ease-in-out infinite;border-radius:var(--radius)}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+.toast{display:flex;align-items:flex-start;gap:0.75rem;padding:1rem;border-radius:var(--radius);border:1px solid hsl(var(--border));background:hsl(var(--popover));color:hsl(var(--popover-foreground));box-shadow:0 10px 38px -10px rgba(0,0,0,0.3),0 10px 20px -15px rgba(0,0,0,0.2);min-width:280px;max-width:360px;animation:slideIn 200ms ease}
+@keyframes slideIn{from{opacity:0;transform:translateX(100%)}to{opacity:1;transform:translateX(0)}}
+.toast-close{margin-left:auto;padding:0.25rem;color:hsl(var(--muted-foreground));border-radius:var(--radius)}
+.toast-close:hover{background:hsl(var(--accent));color:hsl(var(--accent-foreground))}
+.toast-title{font-weight:600;font-size:0.875rem}
+.toast-description{font-size:0.8125rem;color:hsl(var(--muted-foreground));margin-top:0.125rem}
+
+.scroll-area{overflow:auto;scrollbar-width:thin;scrollbar-color:hsl(var(--muted)) transparent}
+.scroll-area::-webkit-scrollbar{width:8px;height:8px}
+.scroll-area::-webkit-scrollbar-track{background:transparent}
+.scroll-area::-webkit-scrollbar-thumb{background:hsl(var(--muted));border-radius:4px}
+.scroll-area::-webkit-scrollbar-thumb:hover{background:hsl(var(--muted-foreground)/0.5)}
+
+.tabs{display:flex;gap:0.25rem;background:hsl(var(--muted));padding:0.25rem;border-radius:var(--radius)}
+.tab{padding:0.5rem 1rem;border-radius:calc(var(--radius) - 2px);font-size:0.875rem;font-weight:500;color:hsl(var(--muted-foreground));transition:all 100ms ease;white-space:nowrap}
+.tab[data-state=active]{background:hsl(var(--background));color:hsl(var(--foreground));box-shadow:0 1px 2px rgba(0,0,0,0.05)}
+.tab:focus-visible{outline:2px solid hsl(var(--ring));outline-offset:-2px}
+
+.accordion{width:100%}
+.accordion-item{border-bottom:1px solid hsl(var(--border))}
+.accordion-item:last-child{border-bottom:none}
+.accordion-trigger{display:flex;width:100%;align-items:center;justify-content:space-between;padding:1rem;font-size:0.875rem;font-weight:500;color:hsl(var(--foreground));text-align:left;transition:all 100ms ease}
+.accordion-trigger:hover{background:hsl(var(--accent))}
+.accordion-trigger:focus-visible{outline:2px solid hsl(var(--ring));outline-offset:-2px}
+.accordion-trigger[aria-expanded=true] .accordion-icon{transform:rotate(180deg)}
+.accordion-icon{transition:transform 200ms ease;flex-shrink:0}
+.accordion-content{overflow:hidden;transition:height 300ms ease}
+.accordion-content[data-state=closed]{height:0}
+.accordion-content[data-state=open]{height:auto}
+
+/* Layout */
+.app{display:grid;grid-template-rows:auto 1fr auto;min-height:100vh}
+.header{position:sticky;top:0;z-index:100;background:hsl(var(--background)/0.8);backdrop-filter:blur(8px);border-bottom:1px solid hsl(var(--border))}
+.header-inner{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1rem;padding:1rem 1.5rem;max-width:1600px;margin:0 auto}
+.header-brand{display:flex;align-items:center;gap:0.75rem}
+.header-logo{width:2.5rem;height:2.5rem;border-radius:var(--radius);background:linear-gradient(135deg,hsl(var(--primary)),hsl(var(--chart-3)));display:flex;align-items:center;justify-content:center;color:hsl(var(--primary-foreground));font-weight:700;font-size:1.25rem}
+.header-title{font-size:1.25rem;font-weight:700;letter-spacing:-0.02em}
+.header-sub{font-size:0.8125rem;color:hsl(var(--muted-foreground));margin-top:0.125rem}
+.header-actions{display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem}
+
+.search-input{position:relative;width:100%;max-width:360px}
+.search-input .input{padding-left:2.5rem}
+.search-icon{position:absolute;left:0.75rem;top:50%;transform:translateY(-50%);width:1rem;height:1rem;color:hsl(var(--muted-foreground));pointer-events:none}
+
+.main{max-width:1600px;margin:0 auto;padding:1.5rem;width:100%}
+.stats-bar{display:flex;flex-wrap:wrap;align-items:center;gap:1rem;padding:1rem 1.5rem;background:hsl(var(--card));border:1px solid hsl(var(--border));border-radius:var(--radius);margin-bottom:1.5rem}
+.stat-item{display:flex;align-items:center;gap:0.5rem;padding:0.5rem 1rem;background:hsl(var(--muted));border-radius:var(--radius);white-space:nowrap}
+.stat-label{font-size:0.75rem;color:hsl(var(--muted-foreground));font-weight:500}
+.stat-value{font-size:1rem;font-weight:600;color:hsl(var(--foreground))}
+.stat-value.success{color:hsl(var(--success))}
+.stat-value.destructive{color:hsl(var(--destructive))}
+.stat-value.warning{color:hsl(var(--warning))}
+
+.controls{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1.5rem}
+.filter-group{display:flex;flex-wrap:wrap;gap:0.5rem}
+.filter-chip{display:flex;align-items:center;gap:0.375rem;padding:0.375rem 0.875rem;border-radius:9999px;font-size:0.75rem;font-weight:500;color:hsl(var(--muted-foreground));background:hsl(var(--secondary));border:1px solid hsl(var(--border));transition:all 100ms ease}
+.filter-chip:hover{background:hsl(var(--accent));color:hsl(var(--accent-foreground))}
+.filter-chip.active{background:hsl(var(--primary));color:hsl(var(--primary-foreground));border-color:transparent}
+
+.grid{display:grid;gap:1rem;grid-template-columns:1fr}
+@media (min-width:640px){.grid{grid-template-columns:repeat(2,1fr)}}
+@media (min-width:1024px){.grid{grid-template-columns:repeat(3,1fr)}}
+@media (min-width:1400px){.grid{grid-template-columns:repeat(4,1fr)}}
+
+.kpi-card{display:flex;flex-direction:column;height:100%;min-height:380px}
+.kpi-header{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:0.75rem;margin-bottom:1rem}
+.kpi-title-wrap{flex:1;min-width:0}
+.kpi-title{font-size:0.875rem;font-weight:600;line-height:1.4;color:hsl(var(--foreground));word-break:break-word}
+.kpi-meta{display:flex;flex-wrap:wrap;align-items:center;gap:0.375rem;margin-top:0.375rem}
+.kpi-value{font-size:2.25rem;font-weight:700;line-height:1;letter-spacing:-0.02em;margin-bottom:0.5rem}
+.kpi-value.success{color:hsl(var(--success))}
+.kpi-value.destructive{color:hsl(var(--destructive))}
+.kpi-value.warning{color:hsl(var(--warning))}
+.kpi-target{font-size:0.75rem;color:hsl(var(--muted-foreground))}
+.kpi-target span{color:hsl(var(--foreground));font-weight:500}
+
+.progress{height:6px;background:hsl(var(--secondary));border-radius:9999px;overflow:hidden;margin-top:0.5rem}
+.progress-fill{height:100%;border-radius:9999px;transition:width 600ms ease,background 200ms ease}
+.progress-fill.success{background:hsl(var(--success))}
+.progress-fill.destructive{background:hsl(var(--destructive))}
+.progress-fill.warning{background:hsl(var(--warning))}
+.progress-fill.default{background:hsl(var(--primary))}
+
+.chart-wrap{flex:1;min-height:200px;position:relative;border-radius:var(--radius);background:hsl(var(--muted)/0.5);overflow:hidden}
+.chart-wrap canvas{width:100%!important;height:100%!important}
+
+.district-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;padding:0.625rem 1rem;border-radius:var(--radius);background:hsl(var(--muted));border:1px solid hsl(var(--border));color:hsl(var(--foreground));font-size:0.8125rem;font-weight:500;transition:all 150ms ease;margin-top:0.75rem}
+.district-toggle:hover{background:hsl(var(--accent))}
+.district-toggle:focus-visible{outline:2px solid hsl(var(--ring));outline-offset:2px}
+.district-toggle-icon{width:1rem;height:1rem;transition:transform 200ms ease;flex-shrink:0}
+.district-toggle[aria-expanded=true] .district-toggle-icon{transform:rotate(180deg)}
+
+.district-detail{overflow:hidden;transition:height 300ms ease;margin-top:0.75rem}
+.district-detail[data-state=closed]{height:0}
+.district-detail[data-state=open]{height:auto}
+.district-chart-wrap{height:220px;border-radius:var(--radius);background:hsl(var(--muted)/0.5);margin-bottom:0.75rem}
+
+.mini-table{width:100%;border-collapse:collapse;font-size:0.75rem}
+.mini-table th,.mini-table td{padding:0.5rem 0.75rem;text-align:left;border-bottom:1px solid hsl(var(--border))}
+.mini-table th{color:hsl(var(--muted-foreground));font-weight:600;text-transform:uppercase;letter-spacing:0.05em;position:sticky;top:0;background:hsl(var(--card));z-index:1}
+.mini-table tbody tr:hover{background:hsl(var(--accent)/0.5)}
+.mini-table .status{display:inline-flex;align-items:center;gap:0.25rem;padding:0.125rem 0.5rem;border-radius:9999px;font-size:0.6875rem;font-weight:500}
+.mini-table .status.success{background:hsl(var(--success)/0.15);color:hsl(var(--success))}
+.mini-table .status.destructive{background:hsl(var(--destructive)/0.15);color:hsl(var(--destructive))}
+.mini-table .status.muted{background:hsl(var(--muted));color:hsl(var(--muted-foreground))}
+
+.mini-pills{display:flex;flex-wrap:wrap;gap:0.375rem;margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid hsl(var(--border))}
+.mini-pill{display:inline-flex;align-items:center;gap:0.375rem;padding:0.25rem 0.625rem;border-radius:9999px;background:hsl(var(--muted));border:1px solid hsl(var(--border));font-size:0.6875rem;font-weight:500;white-space:nowrap;transition:all 150ms ease}
+.mini-pill:hover{transform:scale(1.02);box-shadow:0 2px 8px rgba(0,0,0,0.15)}
+.mini-pill .dot{width:0.5rem;height:0.5rem;border-radius:50%}
+.mini-pill.success .dot{background:hsl(var(--success))}
+.mini-pill.destructive .dot{background:hsl(var(--destructive))}
+.mini-pill.muted .dot{background:hsl(var(--muted-foreground))}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;z-index:50;background:hsl(var(--background)/0.6);backdrop-filter:blur(4px);opacity:0;visibility:hidden;transition:all 200ms ease}
+.modal-overlay.open{opacity:1;visibility:visible}
+.modal{position:fixed;top:50%;left:50%;z-index:51;transform:translate(-50%,-50%) scale(0.95);width:90vw;max-width:900px;max-height:85vh;background:hsl(var(--card));border:1px solid hsl(var(--border));border-radius:var(--radius);box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);overflow:hidden;opacity:0;visibility:hidden;transition:all 200ms ease}
+.modal-overlay.open .modal{opacity:1;visibility:visible;transform:translate(-50%,-50%) scale(1)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.5rem;border-bottom:1px solid hsl(var(--border))}
+.modal-title{font-size:1rem;font-weight:600;color:hsl(var(--foreground));word-break:break-word;flex:1;min-width:0}
+.modal-close{padding:0.375rem;border-radius:var(--radius);color:hsl(var(--muted-foreground))}
+.modal-close:hover{background:hsl(var(--accent));color:hsl(var(--accent-foreground))}
+.modal-body{padding:1.5rem;overflow:auto;max-height:60vh}
+.modal-footer{display:flex;align-items:center;justify-content:flex-end;gap:0.5rem;padding:1rem 1.5rem;border-top:1px solid hsl(var(--border))}
+
+.data-table{width:100%;border-collapse:collapse;font-size:0.8125rem}
+.data-table th,.data-table td{padding:0.75rem 1rem;text-align:left;border-bottom:1px solid hsl(var(--border))}
+.data-table th{color:hsl(var(--muted-foreground));font-weight:600;text-transform:uppercase;letter-spacing:0.05em;position:sticky;top:0;background:hsl(var(--card));z-index:1}
+.data-table tbody tr:hover{background:hsl(var(--accent)/0.5)}
+.data-table .rank{font-weight:600;color:hsl(var(--primary))}
+.data-table .rank-1{color:hsl(var(--warning))}
+.data-table .rank-2{color:hsl(var(--muted-foreground))}
+.data-table .rank-3{color:hsl(var(--destructive))}
+
+/* Toast Container */
+.toast-container{position:fixed;bottom:1.5rem;right:1.5rem;z-index:100;display:flex;flex-direction:column;gap:0.5rem;pointer-events:none}
+.toast-container .toast{pointer-events:auto}
+
+/* Loading Overlay */
+.loading-overlay{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:hsl(var(--background)/0.8);backdrop-filter:blur(4px);opacity:0;visibility:hidden;transition:all 200ms ease}
+.loading-overlay.open{opacity:1;visibility:visible}
+.loading-spinner{width:3rem;height:3rem;border:3px solid hsl(var(--muted));border-top-color:hsl(var(--primary));border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{margin-top:1rem;font-size:0.875rem;color:hsl(var(--muted-foreground))}
+
+/* Footer */
+.footer{padding:1.5rem;text-align:center;color:hsl(var(--muted-foreground));font-size:0.8125rem;border-top:1px solid hsl(var(--border));background:hsl(var(--card))}
+
+/* Print */
+@media print{
+  .header,.controls,.district-toggle,.modal-overlay,.toast-container,.loading-overlay,.footer{display:none!important}
+  .app{grid-template-rows:auto 1fr}
+  .main{padding:0}
+  .kpi-card{break-inside:avoid;box-shadow:none;border:1px solid #e5e7eb}
+  .chart-wrap{height:200px!important}
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important}
+}
+
+/* Focus Visible Polyfill */
+:focus:not(:focus-visible){outline:none}
+:focus-visible{outline:2px solid hsl(var(--ring));outline-offset:2px}
+</style>
+</head>
+<body>
+<div id="app" class="app">
+  <!-- Header -->
+  <header class="header" role="banner">
+    <div class="header-inner">
+      <div class="header-brand">
+        <div class="header-logo" aria-hidden="true">KPI</div>
+        <div>
+          <h1 class="header-title">KPI สตูล 2569</h1>
+          <div class="header-sub">Health Data Center Dashboard — จังหวัดสตูล ปีงบประมาณ 2569</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div class="search-input" role="search">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="search" class="input" placeholder="ค้นหาตัวชี้วัด..." v-model="searchQuery" @input="debouncedSearch" aria-label="ค้นหาตัวชี้วัด" @keydown.esc="clearSearch">
+        </div>
+        <button class="btn btn-outline btn-sm" @click="refreshData" :disabled="loading" aria-label="รีเฟรชข้อมูล">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          <span class="hidden sm:inline">รีเฟรช</span>
+        </button>
+        <button class="btn btn-outline btn-sm" @click="exportAllCSV" aria-label="ส่งออก CSV ทั้งหมด">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span class="hidden sm:inline">CSV</span>
+        </button>
+        <button class="btn btn-ghost btn-sm" @click="toggleTheme" :aria-label="isDark ? 'สลับเป็น Light mode' : 'สลับเป็น Dark mode'" aria-pressed="false">
+          <svg v-if="isDark" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="main" role="main">
+    <!-- Stats Bar -->
+    <div class="stats-bar" role="status" aria-live="polite">
+      <div class="stat-item">
+        <span class="stat-label">ตัวชี้วัดทั้งหมด</span>
+        <span class="stat-value">{{ indicators.length }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">แสดงผล</span>
+        <span class="stat-value">{{ filtered.length }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">ผ่านเป้า</span>
+        <span class="stat-value success">{{ passedCount }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">ไม่ผ่าน</span>
+        <span class="stat-value destructive">{{ failedCount }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">ไม่มีเป้า</span>
+        <span class="stat-value warning">{{ noTargetCount }}</span>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <div class="filter-group" role="group" aria-label="กรองตามหมวดหมู่">
+        <button class="filter-chip" :class="{active:!activeFilter}" @click="activeFilter=null" aria-pressed="false">ทั้งหมด</button>
+        <button class="filter-chip" v-for="cat in categories" :key="cat" :class="{active:activeFilter===cat}" @click="activeFilter=cat" :aria-pressed="activeFilter===cat">{{ cat }}</button>
+      </div>
+    </div>
+
+    <!-- Grid -->
+    <div class="grid" role="list" aria-label="รายการตัวชี้วัด KPI">
+      <div class="skeleton" v-for="i in 8" :key="i" style="height:380px" v-if="loading" aria-hidden="true"></div>
+      <article class="kpi-card card" v-for="item in filtered" :key="item.id" role="listitem" @click="openDetail(item)" tabindex="0" @keydown.enter="openDetail(item)" @keydown.space.prevent="openDetail(item)">
+        <div class="card-content" style="padding:1.25rem;display:flex;flex-direction:column;height:100%">
+          <div class="kpi-header">
+            <div class="kpi-title-wrap">
+              <h2 class="kpi-title">{{ item.name }}</h2>
+              <div class="kpi-meta">
+                <span class="badge badge-outline">{{ item.category }}</span>
+                <span class="badge badge-secondary">{{ item.id }}</span>
+              </div>
+            </div>
+            <span class="badge" :class="statusClass(item)">
+              {{ statusText(item) }}
+            </span>
+          </div>
+          <div class="kpi-value" :class="valueClass(item)">{{ item.actual }}%</div>
+          <div class="kpi-target">เป้าหมาย <span>{{ item.target }}%</span></div>
+          <div class="progress" role="progressbar" :aria-valuenow="progressValue(item)" aria-valuemin="0" :aria-valuemax="progressMax(item)" aria-label="ความคืบหน้า">
+            <div class="progress-fill" :class="progressClass(item)" :style="{width: progressStyle(item)}"></div>
+          </div>
+          <div class="chart-wrap" :data-id="item.id" aria-hidden="true"></div>
+          <button class="district-toggle" @click.stop="toggleDistrict(item.id)" :aria-expanded="showDistrict[item.id]" aria-controls="district-detail-{{item.id}}">
+            <span>{{ showDistrict[item.id] ? '▲ ย่อรายอำเภอ' : '▼ ขยายรายอำเภอ' }}</span>
+            <svg class="district-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="district-detail" :id="'district-detail-'+item.id" :data-state="showDistrict[item.id] ? 'open' : 'closed'" :data-id="item.id">
+            <div class="district-chart-wrap" :data-id="item.id"></div>
+            <div class="scroll-area" style="max-height:300px">
+              <table class="mini-table">
+                <thead><tr><th>อำเภอ</th><th>ค่า</th><th>สถานะ</th></tr></thead>
+                <tbody>
+                  <tr v-for="d in sortedData(item.data)" :key="d[0]">
+                    <td>{{ d[0] }}</td>
+                    <td>{{ d[1] }}%</td>
+                    <td><span class="status" :class="districtStatusClass(d[1], item)">{{ districtStatusText(d[1], item) }}</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="mini-pills" v-if="!showDistrict[item.id]">
+            <span class="mini-pill" v-for="d in sortedData(item.data).slice(0,4)" :key="d[0]" :class="miniPillClass(d[1], item)">
+              <span class="dot"></span>{{ d[0].slice(0,6) }}: {{ d[1] }}%
+            </span>
+            <span class="mini-pill muted" v-if="item.data.length>4">+{{ item.data.length-4 }} อำเภออื่นๆ</span>
+          </div>
+        </div>
+      </article>
+      <div v-if="filtered.length===0" class="card" style="grid-column:1/-1;text-align:center;padding:3rem">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 1rem;color:hsl(var(--muted-foreground))" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <p style="color:hsl(var(--muted-foreground))">ไม่พบตัวชี้วัดที่ตรงกับการค้นหา</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer" role="contentinfo">
+    <p>ข้อมูลจาก Health Data Center (HDC) — ประมวลผลวันที่ 11 ส.ค. 2569 | Built with Vue 3 + ECharts + shadcn/ui</p>
+  </footer>
+
+  <!-- Modal -->
+  <div class="modal-overlay" :class="{open:modalOpen}" @click.self="closeDetail" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-header">
+        <h2 id="modal-title" class="modal-title">{{ modalItem ? modalItem.name : '' }}</h2>
+        <button class="modal-close" @click="closeDetail" aria-label="ปิดรายละเอียด">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" v-if="modalItem">
+        <div class="scroll-area" style="max-height:50vh">
+          <table class="data-table">
+            <thead><tr><th>อันดับ</th><th>อำเภอ</th><th>ค่า (%)</th><th>สถานะ</th></tr></thead>
+            <tbody>
+              <tr v-for="(d,idx) in sortedData(modalItem.data)" :key="d[0]">
+                <td><span class="rank" :class="idx===0?'rank-1':idx===1?'rank-2':idx===2?'rank-3':''">{{ idx+1 }}</span></td>
+                <td>{{ d[0] }}</td>
+                <td>{{ d[1] }}%</td>
+                <td><span class="badge" :class="districtBadgeClass(d[1], modalItem)">{{ districtStatusText(d[1], modalItem) }}</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="separator" style="margin:1rem 0"></div>
+        <div class="chart-wrap" style="height:300px" aria-hidden="true"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline btn-sm" @click="exportItemCSV(modalItem)" v-if="modalItem">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> CSV
+        </button>
+        <button class="btn btn-outline btn-sm" @click="exportItemPNG(modalItem)" v-if="modalItem">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> PNG
+        </button>
+        <button class="btn btn-default btn-sm" @click="closeDetail">ปิด</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" aria-live="polite" aria-atomic="true">
+    <div class="toast" v-for="toast in toasts" :key="toast.id" :class="toast.type">
+      <div>
+        <div class="toast-title">{{ toast.title }}</div>
+        <div class="toast-description">{{ toast.message }}</div>
+      </div>
+      <button class="toast-close" @click="removeToast(toast.id)" aria-label="ปิดแจ้งเตือน">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" :class="{open:loading}" aria-busy="true" aria-live="assertive" role="status">
+    <div style="text-align:center">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">{{ loadingText }}</div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+const {createApp,ref,computed,watch,onMounted,nextTick} = Vue;
+
+const INLINE_DATA = {"meta": {"province": "สตูล", "province_code": 91, "year": 2569, "date": "2024-08-11", "source": "Health Data Center (HDC) API"}, "indicators": [{"id": "1.1_screen", "name": "ร้อยละการคัดกรอง (DSPM)", "target": 90, "agg": 78.27, "data": [["เมืองสตูล", 76.26], ["ควนโดน", 78.41], ["ควนกาหลง", 79.51], ["ท่าแพ", 79.98], ["ละงู", 78.78], ["ทุ่งหว้า", 81.52], ["มะนัง", 77.52]], "category": "ส่งเสริมป้องกัน > อนามัยแม่และเด็ก"}, {"id": "1.1_late", "name": "ร้อยละพบสงสัยล่าช้า (DSPM)", "target": 20, "agg": 24.24, "data": [["เมืองสตูล", 18.63], ["ควนโดน", 27.31], ["ควนกาหลง", 28.02], ["ท่าแพ", 26.61], ["ละงู", 24.31], ["ทุ่งหว้า", 33.6], ["มะนัง", 24.91]], "category": "ส่งเสริมป้องกัน > อนามัยแม่และเด็ก"}, {"id": "1.1_develop", "name": "ร้อยละพัฒนาการสมวัย (DSPM)", "target": 88, "agg": 75.48, "data": [["เมืองสตูล", 73.48], ["ควนโดน", 76.11], ["ควนกาหลง", 76.87], ["ท่าแพ", 77.06], ["ละงู", 76.26], ["ทุ่งหว้า", 79.13], ["มะนัง", 72.33]], "category": "ส่งเสริมป้องกัน > อนามัยแม่และเด็ก"}, {"id": "2238b787", "name": "ร้อยละของเด็กอายุ 0-5 ปี มีพัฒนาการสมวัย (DSPM)", "target": "90.00", "agg": null, "data": [["เมืองสตูล", 76.26], ["ควนโดน", 78.41], ["ควนกาหลง", 79.51], ["ท่าแพ", 79.98], ["ละงู", 78.78], ["ทุ่งหว้า", 81.52], ["มะนัง", 77.52]], "category": "ส่งเสริมป้องกัน > อนามัยแม่และเด็ก"}, {"id": "7ac059f4", "name": "อัตราตายของผู้ป่วยใน โรคหลอดเลือดสมอง", "target": "7.00", "agg": 3.2, "data": [["เมืองสตูล", 4.83], ["ควนโดน", 8.33], ["ควนกาหลง", 4.35], ["ท่าแพ", 10], ["ละงู", 0.99], ["ทุ่งหว้า", 21], ["มะนัง", 28]], "category": "โรคเรื้อรัง > อัตราตาย"}, {"id": "0acbbb84", "name": "อัตราตายทารกแรกเกิด อายุน้อยกว่าหรือเท่ากับ 28 วัน", "target": "3.60", "agg": 1.84, "data": [["เมืองสตูล", 1.54], ["ควนโดน", 23], ["ควนกาหลง", 35], ["ท่าแพ", 1], ["ละงู", 188], ["ทุ่งหว้า", 47], ["มะนัง", 44]], "category": "โรคเรื้อรัง > อัตราตาย"}, {"id": "8f3d7d8e", "name": "ร้อยละของผู้ป่วยนอกที่มารับบริการในระดับปฐมภูมิได้รับการรักษาด้วยการแพทย์แผนไทยและการแพทย์ทางเลือก ", "target": "35.00", "agg": 50.23, "data": [["เมืองสตูล", 52.13], ["ควนโดน", 59.88], ["ควนกาหลง", 45.18], ["ท่าแพ", 56.91], ["ละงู", 33.46], ["ทุ่งหว้า", 70.08], ["มะนัง", 59.69]], "category": "บริการ > การแพทย์แผนไทย"}, {"id": "9fb3a84c", "name": "อัตราตายของผู้ป่วยโรคกล้ามเนื้อหัวใจตายเฉียบพลันชนิด STEMI", "target": "9.00", "agg": 0.75, "data": [["เมืองสตูล", 50], ["ควนโดน", 24], ["ควนกาหลง", 8], ["ท่าแพ", 16], ["ละงู", 3.45], ["ทุ่งหว้า", 5], ["มะนัง", 2]], "category": "โรคเรื้อรัง > โรคหัวใจ"}, {"id": "WaTHdmG7", "name": "ร้อยละผู้ป่วยไตเรื้อรัง stage 5 รายใหม่ ที่ลดลงจากปีงบประมาณก่อนหน้า", "target": null, "agg": 89, "data": [["เมืองสตูล", 33], ["ควนโดน", 5], ["ควนกาหลง", 8], ["ท่าแพ", 9], ["ละงู", 25], ["ทุ่งหว้า", 6], ["มะนัง", 3]], "category": "โรคเรื้อรัง > โรคไต"}, {"id": "6mun4l1e", "name": "ร้อยละของผู้ป่วยโรคเบาหวาน ได้รับการตรวจ HbA1c ซ้ำภายใน 90 วัน", "target": null, "agg": 3.66, "data": [["เมืองสตูล", 1.5], ["ควนโดน", 6.41], ["ควนกาหลง", 1.71], ["ท่าแพ", 2.38], ["ละงู", 5.02], ["ทุ่งหว้า", 4.55], ["มะนัง", 2.04]], "category": "โรคเรื้อรัง > เบาหวาน (ตรวจติดตาม)"}, {"id": "m7rdkm3q", "name": "ร้อยละของผู้ป่วยโรคเบาหวาน ได้รับการตรวจ LDL-Cholesterol ซ้ำภายใน 90 วัน", "target": null, "agg": 3.41, "data": [["เมืองสตูล", 2.22], ["ควนโดน", 2.37], ["ควนกาหลง", 2.62], ["ท่าแพ", 2.64], ["ละงู", 0.89], ["ทุ่งหว้า", 4.42], ["มะนัง", 3.19]], "category": "โรคเรื้อรัง > เบาหวาน (ตรวจติดตาม)"}, {"id": "a6an5mcv", "name": "ร้อยละผู้ป่วยโรคเบาหวาน ได้รับการตรวจ HbA1c อย่างน้อยปีละ 1 ครั้ง", "target": null, "agg": 78.57, "data": [["เมืองสตูล", 73.98], ["ควนโดน", 85.58], ["ควนกาหลง", 82.47], ["ท่าแพ", 81.16], ["ละงู", 77.62], ["ทุ่งหว้า", 79.15], ["มะนัง", 74.26]], "category": "โรคเรื้อรัง > เบาหวาน (ตรวจติดตาม)"}, {"id": "66js79di", "name": "ร้อยละของผู้ป่วยโรคเบาหวานได้รับการตรวจ LDL-Cholesterol อย่างน้อยปีละ 1 ครั้ง", "target": null, "agg": 79.41, "data": [["เมืองสตูล", 76.75], ["ควนโดน", 85.06], ["ควนกาหลง", 86.06], ["ท่าแพ", 79.66], ["ละงู", 84.3], ["ทุ่งหว้า", 79.27], ["มะนัง", 73.97]], "category": "โรคเรื้อรัง > เบาหวาน (ตรวจติดตาม)"}, {"id": "avxi1awp", "name": "ร้อยละของผู้ป่วยโรคเบาหวาน ได้รับการตรวจ Creatinine อย่างน้อยปีละ 1 ครั้ง", "target": null, "agg": 83.48, "data": [["เมืองสตูล", 81.14], ["ควนโดน", 88.83], ["ควนกาหลง", 90.28], ["ท่าแพ", 83.77], ["ละงู", 86.3], ["ทุ่งหว้า", 83.76], ["มะนัง", 77.87]], "category": "โรคเรื้อรัง > เบาหวาน (ตรวจติดตาม)"}, {"id": "0eqewut9", "name": "ร้อยละของผู้มารับบริการได้รับการตรวจ Total Cholesterol ซ้ำภายใน 90 วัน", "target": null, "agg": 3.17, "data": [["เมืองสตูล", 3.76], ["ควนโดน", 1.46], ["ควนกาหลง", 2.36], ["ท่าแพ", 2.3], ["ละงู", 1.72], ["ทุ่งหว้า", 3.97], ["มะนัง", 2.83]], "category": "โรคเรื้อรัง > ความดัน/ไขมัน"}, {"id": "igizblqv", "name": "ร้อยละของผู้มารับบริการได้รับการตรวจ Triglycerides ซ้ำภายใน 90 วัน", "target": null, "agg": 3.13, "data": [["เมืองสตูล", 3.18], ["ควนโดน", 1.51], ["ควนกาหลง", 3.03], ["ท่าแพ", 2.5], ["ละงู", 1.78], ["ทุ่งหว้า", 4.25], ["มะนัง", 1.2]], "category": "โรคเรื้อรัง > ความดัน/ไขมัน"}]};
+const app = createApp({
+  setup(){
+    const meta = ref({});
+    const indicators = ref([]);
+    const categories = ref([]);
+    const activeFilter = ref(null);
+    const searchQuery = ref('');
+    const loading = ref(false);
+    const loadingText = ref('กำลังโหลด...');
+    const chartInstances = ref({});
+    const districtChartInstances = ref({});
+    const modalChartInstance = ref(null);
+    const initRetries = ref({});
+    const showDistrict = ref({});
+    const modalOpen = ref(false);
+    const modalItem = ref(null);
+    const modalChartRef = ref(null);
+    const isDark = ref(true);
+    const toasts = ref([]);
+    let searchTimeout = null;
+
+    // Load inline data
+    const loadInlineData = () => {
+      loading.value = true;
+      loadingText.value = 'กำลังโหลดข้อมูล...';
+      setTimeout(() => {
+        try{
+          meta.value = INLINE_DATA.meta || {};
+          const items = (INLINE_DATA.indicators || []).map(i => ({
+            ...i,
+            target: Number(i.target) || 0,
+            actual: Number(i.actual) || 0,
+            data: (i.data || []).map(d => [String(d[0]), Number(d[1]) || 0])
+          }));
+          indicators.value = items;
+          const cats = [...new Set(items.map(i => i.category))].sort();
+          categories.value = cats;
+        }catch(e){
+          console.error('Load inline error:',e);
+          showToast('error','โหลดข้อมูลล้มเหลว',e.message);
+        }finally{
+          loading.value = false;
+          nextTick(() => initAllCharts());
+        }
+      }, 100);
+    };
+
+    const initAllCharts = () => {
+      indicators.value.forEach(item => initChart(item.id));
+      Object.keys(showDistrict.value).filter(k => showDistrict.value[k]).forEach(k => initDistrictChart(k));
+      if(modalOpen.value && modalItem.value) initModalChart(modalItem.value);
+    };
+
+    // Chart: Main Card (Vertical Bar)
+    const getChartOption = (item) => {
+      const sorted = [...item.data].sort((a,b) => b[1] - a[1]);
+      const districts = sorted.map(d => d[0]);
+      const values = sorted.map(d => d[1]);
+      const target = item.target;
+      const higherBetter = isHigherBetter(item.name);
+      const colors = values.map(v => {
+        if(target === 0) return 'hsl(var(--primary))';
+        return higherBetter ? (v >= target ? 'hsl(var(--success))' : 'hsl(var(--destructive))') : (v <= target ? 'hsl(var(--success))' : 'hsl(var(--destructive))');
+      });
+      const theme = isDark.value ? 'dark' : '';
+      return {
+        theme,
+        color: ['hsl(var(--primary))','hsl(var(--success))','hsl(var(--destructive))','hsl(var(--warning))'],
+        grid: {left:10,right:10,top:10,bottom:40,containLabel:true},
+        xAxis: {type:'category',data:districts,axisLabel:{interval:0,rotate:-15,fontSize:10,fontFamily:'inherit',color:'hsl(var(--muted-foreground))'},axisLine:{lineStyle:{color:'hsl(var(--border))'}},axisTick:{show:false}},
+        yAxis: {type:'value',axisLabel:{fontSize:10,fontFamily:'inherit',color:'hsl(var(--muted-foreground))',formatter:'{value}%'},axisLine:{lineStyle:{color:'hsl(var(--border))'}},splitLine:{lineStyle:{color:'hsl(var(--border))',type:'dashed'}},min:0,max:Math.max(100,target*1.2,Math.max(...values)*1.1)},
+        series: [{name:'ค่า',type:'bar',data:values,itemStyle:{color:(params) => colors[params.dataIndex]},label:{show:true,position:'top',fontSize:9,fontWeight:600,color:'hsl(var(--foreground))',formatter:'{c}%'},barWidth:'60%',borderRadius:[3,3,0,0],emphasis:{scale:true,shadowBlur:10,shadowColor:'rgba(0,0,0,0.3)'}}],
+        tooltip: {trigger:'axis',backgroundColor:'hsl(var(--popover))',borderColor:'hsl(var(--border))',borderWidth:1,padding:[8,12],textStyle:{color:'hsl(var(--popover-foreground))',fontSize:12},formatter:(params) => {
+          const p = params[0]; const v = p.value; const isPass = target===0 ? true : (higherBetter ? v>=target : v<=target);
+          return `<strong>${p.name}</strong><br/>ค่า: ${v}%<br/>เป้า: ${target}%<br/>สถานะ: ${isPass?'✅ ผ่าน':'❌ ไม่ผ่าน'}`;
+        }},
+        animation: true,animationDuration:800,animationEasing:'cubicOut'
+      };
+    };
+
+    // Chart: District Detail (Horizontal Bar)
+    const getDistrictChartOption = (item) => {
+      const sorted = [...item.data].sort((a,b) => a[1] - b[1]);
+      const districts = sorted.map(d => d[0]);
+      const values = sorted.map(d => d[1]);
+      const target = item.target;
+      const higherBetter = isHigherBetter(item.name);
+      const colors = values.map(v => {
+        if(target===0) return 'hsl(var(--primary))';
+        return higherBetter ? (v>=target?'hsl(var(--success))':'hsl(var(--destructive))') : (v<=target?'hsl(var(--success))':'hsl(var(--destructive))');
+      });
+      const theme = isDark.value ? 'dark' : '';
+      return {
+        theme,
+        grid:{left:80,right:60,top:10,bottom:10,containLabel:true},
+        xAxis:{type:'value',axisLabel:{fontSize:10,fontFamily:'inherit',color:'hsl(var(--muted-foreground))',formatter:'{value}%'},axisLine:{lineStyle:{color:'hsl(var(--border))'}},splitLine:{lineStyle:{color:'hsl(var(--border))',type:'dashed'}},min:0,max:Math.max(100,target*1.2,Math.max(...values)*1.1)},
+        yAxis:{type:'category',data:districts,inverse:true,axisLabel:{fontSize:11,fontFamily:'inherit',color:'hsl(var(--foreground))',fontWeight:500},axisLine:{lineStyle:{color:'hsl(var(--border))'}},axisTick:{show:false}},
+        series:[{name:'ค่า',type:'bar',data:values,itemStyle:{color:(params)=>colors[params.dataIndex]},label:{show:true,position:'right',fontSize:10,fontWeight:600,color:'hsl(var(--foreground))',formatter:'{c}%'},barHeight:'70%',borderRadius:[0,3,3,0],emphasis:{scale:true,shadowBlur:10,shadowColor:'rgba(0,0,0,0.3)'}}],
+        tooltip:{trigger:'axis',backgroundColor:'hsl(var(--popover))',borderColor:'hsl(var(--border))',borderWidth:1,padding:[8,12],textStyle:{color:'hsl(var(--popover-foreground))',fontSize:12},formatter:(params)=>{const p=params[0];const v=p.value;const isPass=target===0?true:(higherBetter?v>=target:v<=target);return `<strong>${p.name}</strong><br/>ค่า: ${v}%<br/>เป้า: ${target}%<br/>สถานะ: ${isPass?'✅ ผ่าน':'❌ ไม่ผ่าน'}`;}},
+        animation:true,animationDuration:800,animationEasing:'cubicOut'
+      };
+    };
+
+    // Chart: Modal (Vertical Bar Large)
+    const getModalChartOption = (item) => {
+      const sorted = [...item.data].sort((a,b) => b[1] - a[1]);
+      const districts = sorted.map(d => d[0]);
+      const values = sorted.map(d => d[1]);
+      const target = item.target;
+      const higherBetter = isHigherBetter(item.name);
+      const colors = values.map(v => {
+        if(target===0) return 'hsl(var(--primary))';
+        return higherBetter ? (v>=target?'hsl(var(--success))':'hsl(var(--destructive))') : (v<=target?'hsl(var(--success))':'hsl(var(--destructive))');
+      });
+      const theme = isDark.value ? 'dark' : '';
+      return {
+        theme,
+        grid:{left:10,right:10,top:30,bottom:60,containLabel:true},
+        xAxis:{type:'category',data:districts,axisLabel:{interval:0,rotate:-20,fontSize:12,fontFamily:'inherit',color:'hsl(var(--muted-foreground))'},axisLine:{lineStyle:{color:'hsl(var(--border))'}},axisTick:{show:false}},
+        yAxis:{type:'value',axisLabel:{fontSize:11,fontFamily:'inherit',color:'hsl(var(--muted-foreground))',formatter:'{value}%'},axisLine:{lineStyle:{color:'hsl(var(--border))'}},splitLine:{lineStyle:{color:'hsl(var(--border))',type:'dashed'}},min:0,max:Math.max(100,target*1.2,Math.max(...values)*1.1)},
+        series:[{name:'ค่า',type:'bar',data:values,itemStyle:{color:(params)=>colors[params.dataIndex]},label:{show:true,position:'top',fontSize:11,fontWeight:600,color:'hsl(var(--foreground))',formatter:'{c}%'},barWidth:'55%',borderRadius:[4,4,0,0],emphasis:{scale:true,shadowBlur:15,shadowColor:'rgba(0,0,0,0.4)'}},{name:'เป้าหมาย',type:'line',data:new Array(districts.length).fill(target),symbol:'none',lineStyle:{color:'hsl(var(--warning))',width:2,type:'dashed'},label:{show:false}}],
+        tooltip:{trigger:'axis',backgroundColor:'hsl(var(--popover))',borderColor:'hsl(var(--border))',borderWidth:1,padding:[10,14],textStyle:{color:'hsl(var(--popover-foreground))',fontSize:13},formatter:(params)=>{const bar=params.find(p=>p.seriesName==='ค่า');if(!bar)return'';const v=bar.value;const isPass=target===0?true:(higherBetter?v>=target:v<=target);return `<strong>${bar.name}</strong><br/>ค่า: ${v}%<br/>เป้า: ${target}%<br/>สถานะ: ${isPass?'✅ ผ่านเป้า':'❌ ไม่ผ่านเป้า'}`;}},
+        legend:{show:true,top:0,right:0,textStyle:{fontSize:11,color:'hsl(var(--muted-foreground))'}},
+        animation:true,animationDuration:1000,animationEasing:'cubicOut'
+      };
+    };
+
+    const initChart = (id, retry = 0) => {
+      const el = document.querySelector(`.chart-wrap[data-id="${id}"]`);
+      if(!el){
+        if(retry < 10){
+          initRetries.value[id] = setTimeout(() => initChart(id, retry + 1), 50);
+        }
+        return;
+      }
+      if(initRetries.value[id]){ clearTimeout(initRetries.value[id]); delete initRetries.value[id]; }
+      const item = indicators.value.find(i => i.id === id); if(!item) return;
+      if(chartInstances.value[id]) chartInstances.value[id].dispose();
+      const chart = echarts.init(el, isDark.value ? 'dark' : null, {renderer:'canvas'});
+      chart.setOption(getChartOption(item));
+      chartInstances.value[id] = chart;
+      window.addEventListener('resize',() => chart.resize());
+    };
+
+    const initDistrictChart = (id, retry = 0) => {
+      const el = document.querySelector(`.district-chart-wrap[data-id="${id}"]`);
+      if(!el){
+        if(retry < 10){
+          initRetries.value[`district-${id}`] = setTimeout(() => initDistrictChart(id, retry + 1), 50);
+        }
+        return;
+      }
+      if(initRetries.value[`district-${id}`]){ clearTimeout(initRetries.value[`district-${id}`]); delete initRetries.value[`district-${id}`]; }
+      const item = indicators.value.find(i => i.id === id); if(!item) return;
+      if(districtChartInstances.value[id]) districtChartInstances.value[id].dispose();
+      const chart = echarts.init(el, isDark.value ? 'dark' : null, {renderer:'canvas'});
+      chart.setOption(getDistrictChartOption(item));
+      districtChartInstances.value[id] = chart;
+      window.addEventListener('resize',() => chart.resize());
+    };
+
+    const initModalChart = (item, retry = 0) => {
+      const el = document.querySelector('.modal .chart-wrap');
+      if(!el){
+        if(retry < 10){
+          initRetries.value['modal'] = setTimeout(() => initModalChart(item, retry + 1), 50);
+        }
+        return;
+      }
+      if(initRetries.value['modal']){ clearTimeout(initRetries.value['modal']); delete initRetries.value['modal']; }
+      if(modalChartInstance.value) modalChartInstance.value.dispose();
+      const chart = echarts.init(el, isDark.value ? 'dark' : null, {renderer:'canvas'});
+      chart.setOption(getModalChartOption(item));
+      modalChartInstance.value = chart;
+      window.addEventListener('resize',() => chart.resize());
+    };
+
+    const resizeAllCharts = () => {
+      Object.values(chartInstances.value).forEach(c => c?.resize());
+      Object.values(districtChartInstances.value).forEach(c => c?.resize());
+      modalChartInstance.value?.resize();
+    };
+
+    // Computed
+    const filtered = computed(() => {
+      let res = indicators.value;
+      if(activeFilter.value) res = res.filter(i => i.category === activeFilter.value);
+      if(searchQuery.value.trim()){
+        const q = searchQuery.value.trim().toLowerCase();
+        res = res.filter(i => i.name.toLowerCase().includes(q) || i.id.toLowerCase().includes(q) || i.category.toLowerCase().includes(q));
+      }
+      return res;
+    });
+
+    const sortedData = (data) => [...data].sort((a,b) => b[1] - a[1]);
+
+    const isHigherBetter = (name) => !/อัตราตาย|อัตราการฆ่า|ต่ำกว่า|ลดลง|อัตรา.*ตาย/i.test(name);
+
+    const statusClass = (item) => {
+      if(item.target===0) return 'badge-secondary';
+      const hb = isHigherBetter(item.name);
+      return (hb ? item.actual>=item.target : item.actual<=item.target) ? 'badge-success' : 'badge-destructive';
+    };
+
+    const statusText = (item) => item.target===0 ? 'ไม่มีเป้า' : (isHigherBetter(item.name) ? (item.actual>=item.target?'ผ่านเป้า':'ไม่ผ่าน') : (item.actual<=item.target?'ผ่านเป้า':'ไม่ผ่าน'));
+
+    const valueClass = (item) => {
+      if(item.target===0) return '';
+      return isHigherBetter(item.name) ? (item.actual>=item.target?'success':'destructive') : (item.actual<=item.target?'success':'destructive');
+    };
+
+    const progressValue = (item) => Math.min(item.actual, progressMax(item));
+    const progressMax = (item) => item.target>0 ? Math.max(item.target*1.2, 100) : 100;
+    const progressStyle = (item) => `${Math.min(100, (progressValue(item)/progressMax(item))*100)}%`;
+    const progressClass = (item) => {
+      if(item.target===0) return 'default';
+      return isHigherBetter(item.name) ? (item.actual>=item.target?'success':'destructive') : (item.actual<=item.target?'success':'destructive');
+    };
+
+    const districtStatusClass = (val, item) => {
+      if(item.target===0) return 'muted';
+      return isHigherBetter(item.name) ? (val>=item.target?'success':'destructive') : (val<=item.target?'success':'destructive');
+    };
+    const districtStatusText = (val, item) => item.target===0 ? 'ไม่มีเป้า' : (isHigherBetter(item.name) ? (val>=item.target?'ผ่าน':'ไม่ผ่าน') : (val<=item.target?'ผ่าน':'ไม่ผ่าน'));
+    const districtBadgeClass = (val, item) => districtStatusClass(val, item).replace('muted','badge-secondary').replace('success','badge-success').replace('destructive','badge-destructive');
+    const miniPillClass = (val, item) => districtStatusClass(val, item);
+
+    const passedCount = computed(() => indicators.value.filter(i => i.target>0 && (isHigherBetter(i.name)?i.actual>=i.target:i.actual<=i.target)).length);
+    const failedCount = computed(() => indicators.value.filter(i => i.target>0 && (isHigherBetter(i.name)?i.actual<i.target:i.actual>i.target)).length);
+    const noTargetCount = computed(() => indicators.value.filter(i => i.target===0).length);
+
+    // Methods
+    const debouncedSearch = () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {}, 150);
+    };
+    const clearSearch = () => { searchQuery.value = ''; };
+
+    const toggleDistrict = (id) => {
+      showDistrict.value[id] = !showDistrict.value[id];
+      if(showDistrict.value[id]) nextTick(() => initDistrictChart(id));
+    };
+
+    const openDetail = (item) => {
+      modalItem.value = item;
+      modalOpen.value = true;
+      document.body.style.overflow = 'hidden';
+      nextTick(() => initModalChart(item));
+    };
+
+    const closeDetail = () => {
+      modalOpen.value = false;
+      modalItem.value = null;
+      document.body.style.overflow = '';
+    };
+
+    const toggleTheme = () => {
+      isDark.value = !isDark.value;
+      document.documentElement.classList.toggle('light', !isDark.value);
+      document.documentElement.style.setProperty('--bg', isDark.value ? 'hsl(var(--background))' : 'hsl(var(--background))');
+      resizeAllCharts();
+      showToast('info', isDark.value ? 'Dark mode' : 'Light mode', 'สลับธีมเรียบร้อย');
+    };
+
+    const refreshData = async () => {
+      loading.value = true; loadingText.value = 'กำลังดึงข้อมูลล่าสุด...';
+      showToast('info','รีเฟรช','กำลังโหลดข้อมูลจากไฟล์...');
+      try{
+        const res = await fetch('kpi_data.json?v=' + Date.now());
+        if(!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        meta.value = data.meta || {};
+        const items = (data.indicators || []).map(i => ({
+          ...i,
+          target: Number(i.target) || 0,
+          actual: Number(i.actual) || 0,
+          data: (i.data || []).map(d => [String(d[0]), Number(d[1]) || 0])
+        }));
+        indicators.value = items;
+        const cats = [...new Set(items.map(i => i.category))].sort();
+        categories.value = cats;
+        showToast('success','รีเฟรชสำเร็จ',`โหลดตัวชี้วัด ${items.length} รายการ`);
+      }catch(e){
+        console.error('Refresh error:',e);
+        showToast('error','รีเฟรชล้มเหลว',e.message);
+      }finally{
+        loading.value = false;
+        nextTick(() => initAllCharts());
+      }
+    };
+
+    const exportItemCSV = (item) => {
+      if(!item) return;
+      const rows = [['อันดับ','อำเภอ','ค่า (%)','สถานะ']];
+      sortedData(item.data).forEach((d,idx) => rows.push([idx+1, d[0], d[1], districtStatusText(d[1], item)]));
+      const csv = '\uFEFF' + rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+      downloadBlob(csv, `${item.id}_${item.name.replace(/[\\/:*?"<>|]/g,'')}.csv`, 'text/csv;charset=utf-8');
+      showToast('success','ส่งออก CSV',`${item.name}.csv`);
+    };
+
+    const exportAllCSV = () => {
+      const rows = [['ตัวชี้วัด','หมวดหมู่','เป้าหมาย','ค่าจริง','สถานะ']];
+      indicators.value.forEach(i => rows.push([i.name, i.category, i.target+'%', i.actual+'%', statusText(i)]));
+      const csv = '\uFEFF' + rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+      downloadBlob(csv, 'KPI_Satun_2569_all.csv', 'text/csv;charset=utf-8');
+      showToast('success','ส่งออก CSV','ไฟล์รวมทุกตัวชี้วัด');
+    };
+
+    const exportItemPNG = (item) => {
+      if(!modalChart.value || !item) return;
+      const dataUrl = modalChart.value.getDataURL({type:'png',pixelRatio:2,backgroundColor:isDark.value?'hsl(var(--background))':'hsl(var(--background))'});
+      downloadDataUrl(dataUrl, `${item.id}_${item.name.replace(/[\\/:*?"<>|]/g,'')}.png`);
+      showToast('success','ส่งออก PNG',`${item.name}.png (2x retina)`);
+    };
+
+    const downloadBlob = (content, filename, type) => {
+      const blob = new Blob([content], {type});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
+      URL.revokeObjectURL(url);
+    };
+    const downloadDataUrl = (dataUrl, filename) => {
+      const a = document.createElement('a'); a.href = dataUrl; a.download = filename; a.click();
+    };
+
+    const showToast = (type, title, message) => {
+      const id = Date.now();
+      toasts.value.push({id, type, title, message});
+      setTimeout(() => removeToast(id), 4000);
+    };
+    const removeToast = (id) => { toasts.value = toasts.value.filter(t => t.id !== id); };
+
+    // Keyboard shortcuts
+    const handleKeydown = (e) => {
+      if((e.ctrlKey || e.metaKey) && e.key === 'k'){
+        e.preventDefault();
+        document.querySelector('.search-input input')?.focus();
+      }
+      if(e.key === 'Escape') closeDetail();
+    };
+
+    onMounted(() => {
+      loadInlineData();
+      document.addEventListener('keydown', handleKeydown);
+      window.addEventListener('resize', resizeAllCharts);
+      document.documentElement.classList.add('dark');
+    });
+
+    return {
+      meta, indicators, categories, activeFilter, searchQuery, loading, loadingText,
+      chartInstances, districtChartInstances, showDistrict,
+      filtered, modalOpen, modalItem, isDark, toasts,
+      sortedData, statusClass, statusText, valueClass, progressStyle, progressClass,
+      districtStatusClass, districtStatusText, districtBadgeClass, miniPillClass,
+      passedCount, failedCount, noTargetCount,
+      debouncedSearch, clearSearch, toggleDistrict, openDetail, closeDetail,
+      toggleTheme, refreshData, exportItemCSV, exportAllCSV, exportItemPNG,
+      showToast, removeToast
+    };
+  }
+});
+
+app.mount('#app');
+</script>
+</body>
+</html>

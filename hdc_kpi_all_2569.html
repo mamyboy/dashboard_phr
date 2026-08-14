@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>KPI กระทรวง สตูล 2569</title>
+<style>
+  :root{
+    --bg:#0f172a; --card:#1e293b; --card2:#273449; --txt:#e2e8f0; --muted:#94a3b8;
+    --green:#22c55e; --amber:#f59e0b; --red:#ef4444; --blue:#3b82f6; --line:#334155; --purple:#a855f7;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Sarabun','Prompt',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    background:var(--bg);color:var(--txt);padding:16px;line-height:1.5;-webkit-text-size-adjust:100%}
+  .wrap{max-width:1200px;margin:0 auto}
+  header{text-align:center;margin-bottom:20px;padding:16px;border-bottom:1px solid var(--line)}
+  header h1{font-size:clamp(18px,5vw,26px);font-weight:700;color:#fff}
+  header .sub{color:var(--muted);font-size:14px;margin-top:4px}
+  .badge{display:inline-block;background:var(--purple);color:#fff;padding:2px 10px;border-radius:99px;font-size:12px;margin:2px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;align-items:start}
+  .kpi{background:var(--card);border-radius:14px;padding:16px;padding-top:14px;border:1px solid var(--line);position:relative;overflow:hidden;height:100%}
+  .kpi h3{font-size:14px;font-weight:600;color:#fff;margin-bottom:8px;line-height:1.35;min-height:38px;word-break:break-word;overflow-wrap:anywhere}
+  .kpi .statusline{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+  .kpi .status{font-size:11px;padding:3px 10px;border-radius:99px;font-weight:700;white-space:nowrap}
+  .kpi .target-txt{font-size:11px;color:var(--muted)}
+  .kpi .val{font-size:clamp(26px,7vw,36px);font-weight:800;line-height:1}
+  .kpi .meta{font-size:12px;color:var(--muted);margin-top:6px}
+  .kpi .status{position:absolute;top:12px;right:12px;font-size:11px;padding:3px 8px;border-radius:99px;font-weight:700}
+  .s-ok{background:rgba(34,197,94,.15);color:var(--green)}
+  .s-bad{background:rgba(239,68,68,.15);color:var(--red)}
+  .s-na{background:rgba(148,163,184,.15);color:var(--muted)}
+  .bar{height:6px;background:var(--card2);border-radius:99px;margin-top:10px;overflow:hidden}
+  .bar > i{display:block;height:100%;border-radius:99px}
+  .mini{display:flex;justify-content:flex-start;flex-wrap:wrap;gap:4px;margin-top:10px}
+  .mini span{padding:2px 6px;background:var(--card2);border-radius:4px;font-size:10.5px}
+  footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px;padding-top:16px;border-top:1px solid var(--line)}
+  @media(max-width:480px){body{padding:10px}.grid{gap:10px}.kpi{padding:14px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>ตัวชี้วัดกระทรวง (KPI) — จังหวัดสตูล</h1>
+    <div class="sub">ปีงบประมาณ 2569 (2026) · เขตสุขภาพที่ 12 · ข้อมูล ณ 11 ส.ค. 2569</div>
+    <div><span class="badge">แหล่งที่มา: HDC</span><span class="badge" id="cnt">-</span></div>
+  </header>
+  <div class="grid" id="grid"></div>
+  <footer>
+    สร้างจากข้อมูลหน้ารายงานมาตรฐาน HDC (standard-report-detail) · สำหรับติดตามภายในจังหวัดสตูล<br>
+    ตัวเลขอาจปรับปรุงเมื่อสิ้นปีงบประมาณ · เป้าหมายที่แสดงอิงจากค่า target ในระบบ HDC
+  </footer>
+</div>
+<script>
+const DATA = [{"id": "1.1_screen", "name": "ร้อยละการคัดกรอง (DSPM)", "target": 90.0, "agg": 78.27, "data": [["เมืองสตูล", 76.26], ["ควนโดน", 78.41], ["ควนกาหลง", 79.51], ["ท่าแพ", 79.98], ["ละงู", 78.78], ["ทุ่งหว้า", 81.52], ["มะนัง", 77.52]]}, {"id": "1.1_late", "name": "ร้อยละพบสงสัยล่าช้า (DSPM)", "target": 20.0, "agg": 24.24, "data": [["เมืองสตูล", 18.63], ["ควนโดน", 27.31], ["ควนกาหลง", 28.02], ["ท่าแพ", 26.61], ["ละงู", 24.31], ["ทุ่งหว้า", 33.6], ["มะนัง", 24.91]]}, {"id": "1.1_develop", "name": "ร้อยละพัฒนาการสมวัย (DSPM)", "target": 88.0, "agg": 75.48, "data": [["เมืองสตูล", 73.48], ["ควนโดน", 76.11], ["ควนกาหลง", 76.87], ["ท่าแพ", 77.06], ["ละงู", 76.26], ["ทุ่งหว้า", 79.13], ["มะนัง", 72.33]]}, {"id": "7ac059f4", "name": "อัตราตายของผู้ป่วยใน โรคหลอดเลือดสมอง", "target": 7.0, "agg": 3.2, "data": [["เมืองสตูล", 4.83], ["ควนโดน", 8.33], ["ควนกาหลง", 4.35], ["ท่าแพ", 10], ["ละงู", 0.99], ["ทุ่งหว้า", 21], ["มะนัง", 28]]}, {"id": "0acbbb84", "name": "อัตราตายทารกแรกเกิด อายุน้อยกว่าหรือเท่ากับ 28 วัน", "target": 3.6, "agg": 1.84, "data": [["เมืองสตูล", 1.54], ["ควนโดน", 23], ["ควนกาหลง", 35], ["ท่าแพ", 1], ["ละงู", 188], ["ทุ่งหว้า", 47], ["มะนัง", 44]]}, {"id": "8f3d7d8e", "name": "ร้อยละของผู้ป่วยนอกที่มารับบริการในระดับปฐมภูมิได้รับการรักษาด้วยการแพทย์แผนไทยและการแพทย์ทางเลือก ", "target": 35.0, "agg": 50.23, "data": [["เมืองสตูล", 52.13], ["ควนโดน", 59.88], ["ควนกาหลง", 45.18], ["ท่าแพ", 56.91], ["ละงู", 33.46], ["ทุ่งหว้า", 70.08], ["มะนัง", 59.69]]}, {"id": "9fb3a84c", "name": "อัตราตายของผู้ป่วยโรคกล้ามเนื้อหัวใจตายเฉียบพลันชนิด STEMI", "target": 9.0, "agg": 0.75, "data": [["เมืองสตูล", 50], ["ควนโดน", 24], ["ควนกาหลง", 8], ["ท่าแพ", 16], ["ละงู", 3.45], ["ทุ่งหว้า", 5], ["มะนัง", 2]]}, {"id": "WaTHdmG7", "name": "ร้อยละผู้ป่วยไตเรื้อรัง stage 5 รายใหม่ ที่ลดลงจากปีงบประมาณก่อนหน้า", "target": null, "agg": 89, "data": [["เมืองสตูล", 33], ["ควนโดน", 5], ["ควนกาหลง", 8], ["ท่าแพ", 9], ["ละงู", 25], ["ทุ่งหว้า", 6], ["มะนัง", 3]]}, {"id": "6mun4l1e", "name": "ร้อยละของผู้ป่วยโรคเบาหวาน ได้รับการตรวจ HbA1c ซ้ำภายใน 90 วัน", "target": null, "agg": 3.66, "data": [["เมืองสตูล", 1.5], ["ควนโดน", 6.41], ["ควนกาหลง", 1.71], ["ท่าแพ", 2.38], ["ละงู", 5.02], ["ทุ่งหว้า", 4.55], ["มะนัง", 2.04]]}, {"id": "m7rdkm3q", "name": "ร้อยละของผู้ป่วยโรคเบาหวาน ได้รับการตรวจ LDL-Cholesterol ซ้ำภายใน 90 วัน", "target": null, "agg": 3.41, "data": [["เมืองสตูล", 2.22], ["ควนโดน", 2.37], ["ควนกาหลง", 2.62], ["ท่าแพ", 2.64], ["ละงู", 0.89], ["ทุ่งหว้า", 4.42], ["มะนัง", 3.19]]}, {"id": "a6an5mcv", "name": "ร้อยละผู้ป่วยโรคเบาหวาน ได้รับการตรวจ HbA1c อย่างน้อยปีละ 1 ครั้ง", "target": null, "agg": 78.57, "data": [["เมืองสตูล", 73.98], ["ควนโดน", 85.58], ["ควนกาหลง", 82.47], ["ท่าแพ", 81.16], ["ละงู", 77.62], ["ทุ่งหว้า", 79.15], ["มะนัง", 74.26]]}, {"id": "66js79di", "name": "ร้อยละของผู้ป่วยโรคเบาหวานได้รับการตรวจ LDL-Cholesterol อย่างน้อยปีละ 1 ครั้ง", "target": null, "agg": 79.41, "data": [["เมืองสตูล", 76.75], ["ควนโดน", 85.06], ["ควนกาหลง", 86.06], ["ท่าแพ", 79.66], ["ละงู", 84.3], ["ทุ่งหว้า", 79.27], ["มะนัง", 73.97]]}, {"id": "avxi1awp", "name": "ร้อยละของผู้ป่วยโรคเบาหวาน ได้รับการตรวจ Creatinine อย่างน้อยปีละ 1 ครั้ง", "target": null, "agg": 83.48, "data": [["เมืองสตูล", 81.14], ["ควนโดน", 88.83], ["ควนกาหลง", 90.28], ["ท่าแพ", 83.77], ["ละงู", 86.3], ["ทุ่งหว้า", 83.76], ["มะนัง", 77.87]]}, {"id": "0eqewut9", "name": "ร้อยละของผู้มารับบริการได้รับการตรวจ Total Cholesterol ซ้ำภายใน 90 วัน", "target": null, "agg": 3.17, "data": [["เมืองสตูล", 3.76], ["ควนโดน", 1.46], ["ควนกาหลง", 2.36], ["ท่าแพ", 2.3], ["ละงู", 1.72], ["ทุ่งหว้า", 3.97], ["มะนัง", 2.83]]}, {"id": "igizblqv", "name": "ร้อยละของผู้มารับบริการได้รับการตรวจ Triglycerides ซ้ำภายใน 90 วัน", "target": null, "agg": 3.13, "data": [["เมืองสตูล", 3.18], ["ควนโดน", 1.51], ["ควนกาหลง", 3.03], ["ท่าแพ", 2.5], ["ละงู", 1.78], ["ทุ่งหว้า", 4.25], ["มะนัง", 1.2]]}];
+
+const grid = document.getElementById("grid");
+document.getElementById("cnt").textContent = DATA.length + " ตัวชี้วัด";
+
+// ฟังก์ชันตัดสินผ่าน/ไม่ผ่าน (สูงดี vs ต่ำดี ไม่ทราบ -> ใช้ higher-is-better เมื่อ target>0 และชื่อไม่มี "อัตราการ"/"อัตราตาย")
+function isHigherBetter(name){
+  return !/อัตราตาย|อัตราการฆ่า|ต่ำกว่า|ลดลง/.test(name);
+}
+
+DATA.forEach(item=>{
+  const agg = item.agg;
+  const target = item.target;
+  let met=null, statusCls="s-na", statusTxt="ไม่มีเป้า";
+  if(agg!=null && target!=null){
+    const hb = isHigherBetter(item.name);
+    met = hb ? agg>=target : agg<=target;
+    statusCls = met?"s-ok":"s-bad";
+    statusTxt = met?"ผ่าน":"ไม่ผ่าน";
+  }
+  const col = met==null?"var(--muted)":(met?"var(--green)":"var(--red)");
+  const pct = (agg!=null&&target!=null) ? Math.min(100, (agg/Math.max(target*1.2,1))*100) : 50;
+  // mini bars อำเภอ (แสดงครบ 7 อำเภอ)
+  const mini = item.data.map(d=>`<span>${d[0].replace('เมืองสตูล','เมืองสตูล').slice(0,7)}: ${d[1]}</span>`).join("");
+  const div = document.createElement("div");
+  div.className="kpi";
+  div.innerHTML = `
+    <h3>${item.name}</h3>
+    <div class="statusline">
+      <span class="target-txt">${target!=null?("เป้า "+target+"%"):"ไม่ระบุเป้า"}</span>
+      <span class="status ${statusCls}">${statusTxt}</span>
+    </div>
+    <div class="val" style="color:${col}">${agg!=null?agg:"—"}<span style="font-size:14px;color:var(--muted)">${agg!=null?"%":""}</span></div>
+    <div class="bar"><i style="width:${pct}%;background:${col}"></i></div>
+    <div class="mini">${mini}</div>
+  `;
+  grid.appendChild(div);
+});
+</script>
+</body>
+</html>

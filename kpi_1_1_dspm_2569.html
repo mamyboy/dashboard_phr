@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>KPI 1.1 DSPM - สตูล 2569</title>
+<style>
+  :root{
+    --bg:#0f172a; --card:#1e293b; --card2:#273449; --txt:#e2e8f0; --muted:#94a3b8;
+    --green:#22c55e; --amber:#f59e0b; --red:#ef4444; --blue:#3b82f6; --line:#334155;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Sarabun','Prompt',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    background:var(--bg);color:var(--txt);padding:16px;line-height:1.5;-webkit-text-size-adjust:100%}
+  .wrap{max-width:1100px;margin:0 auto}
+  header{text-align:center;margin-bottom:20px;padding:16px;border-bottom:1px solid var(--line)}
+  header h1{font-size:clamp(18px,5vw,26px);font-weight:700;color:#fff}
+  header .sub{color:var(--muted);font-size:14px;margin-top:4px}
+  .badge{display:inline-block;background:var(--blue);color:#fff;padding:2px 10px;border-radius:99px;font-size:12px;margin:2px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:24px}
+  .card{background:var(--card);border-radius:14px;padding:18px;border:1px solid var(--line);position:relative;overflow:hidden}
+  .card .label{font-size:14px;color:var(--muted);margin-bottom:8px}
+  .card .val{font-size:clamp(28px,8vw,40px);font-weight:800;line-height:1}
+  .card .target{font-size:13px;color:var(--muted);margin-top:6px}
+  .card .status{position:absolute;top:14px;right:14px;font-size:11px;padding:3px 8px;border-radius:99px;font-weight:700}
+  .s-ok{background:rgba(34,197,94,.15);color:var(--green)}
+  .s-bad{background:rgba(239,68,68,.15);color:var(--red)}
+  .s-warn{background:rgba(245,158,11,.15);color:var(--amber)}
+  .bar{height:8px;background:var(--card2);border-radius:99px;margin-top:12px;overflow:hidden}
+  .bar > i{display:block;height:100%;border-radius:99px}
+  section{background:var(--card);border-radius:14px;padding:18px;margin-bottom:20px;border:1px solid var(--line)}
+  section h2{font-size:16px;margin-bottom:4px;color:#fff}
+  section .note{font-size:12px;color:var(--muted);margin-bottom:14px}
+  .chart{width:100%;overflow-x:auto}
+  svg{display:block;max-width:100%;height:auto}
+  .legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;font-size:12px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .legend i{width:12px;height:12px;border-radius:3px;display:inline-block}
+  footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px;padding-top:16px;border-top:1px solid var(--line)}
+  table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}
+  th,td{padding:8px 6px;text-align:center;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:600;font-size:12px}
+  td:first-child,th:first-child{text-align:left}
+  .pos{color:var(--green)} .neg{color:var(--red)}
+  @media(max-width:480px){
+    body{padding:10px}
+    .cards{gap:10px}
+    table{font-size:11px}
+    th,td{padding:6px 3px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>ตัวชี้วัด 1.1 — ร้อยละของเด็กอายุ 0-5 ปี มีพัฒนาการสมวัย (DSPM)</h1>
+    <div class="sub">จังหวัดสตูล · ปีงบประมาณ 2569 (2026) · เขตสุขภาพที่ 12</div>
+    <div>
+      <span class="badge">แหล่งที่มา: HDC</span>
+      <span class="badge">ประมวลผล 11 ส.ค. 2569</span>
+    </div>
+  </header>
+
+  <div class="cards" id="cards"></div>
+
+  <section>
+    <h2>แผนภูมิแสดง ร้อยละการคัดกรอง</h2>
+    <div class="note">เป้าหมาย ≥ 90% (สูงกว่ายีดว่าได้มาก)</div>
+    <div class="chart"><svg id="chart1" viewBox="0 0 760 320" preserveAspectRatio="xMidYMid meet"></svg></div>
+    <div class="legend"><span><i style="background:var(--blue)"></i>ผลงานจังหวัด/อำเภอ</span><span><i style="background:var(--green)"></i>เป้าหมาย 90%</span></div>
+  </section>
+
+  <section>
+    <h2>แผนภูมิแสดง ร้อยละพบสงสัยล่าช้า</h2>
+    <div class="note">เป้าหมาย ≤ 20% (ต่ำกว่ายีดว่าดีกว่า)</div>
+    <div class="chart"><svg id="chart2" viewBox="0 0 760 320" preserveAspectRatio="xMidYMid meet"></svg></div>
+    <div class="legend"><span><i style="background:var(--amber)"></i>ผลงานจังหวัด/อำเภอ</span><span><i style="background:var(--green)"></i>เป้าหมาย 20%</span></div>
+  </section>
+
+  <section>
+    <h2>แผนภูมิแสดง ร้อยละพัฒนาการสมวัย</h2>
+    <div class="note">เป้าหมาย ≥ 88% (สูงกว่ายีดว่าได้มาก)</div>
+    <div class="chart"><svg id="chart3" viewBox="0 0 760 320" preserveAspectRatio="xMidYMid meet"></svg></div>
+    <div class="legend"><span><i style="background:var(--blue)"></i>ผลงานจังหวัด/อำเภอ</span><span><i style="background:var(--green)"></i>เป้าหมาย 88%</span></div>
+  </section>
+
+  <section>
+    <h2>ตารางสรุปตามอำเภอ</h2>
+    <div class="chart"><table id="tbl"></table></div>
+  </section>
+
+  <footer>
+    สร้างจากข้อมูลหน้ารายงานมาตรฐาน HDC (standard-report-detail) · สำหรับการติดตามภายในจังหวัดสตูล<br>
+    ตัวเลข ณ วันที่ประมวลผล 11 สิงหาคม 2569 — อาจมีการปรับปรุงเมื่อสิ้นปีงบประมาณ
+  </footer>
+</div>
+
+<script>
+// ===== ข้อมูล (ดึงจากกราฟหน้า HDC วันที่ 11 ส.ค. 2569) =====
+const DISTRICTS = ["เมืองสตูล","ควนโดน","ควนกาหลง","ท่าแพ","ละงู","ทุ่งหว้า","มะนัง"];
+const DATA = {
+  screen:   {target:90, values:[76.26,78.41,79.51,79.98,78.78,81.52,77.52], agg:78.27, higherBetter:true},
+  late:     {target:20, values:[18.63,27.31,28.02,26.61,24.31,33.60,24.91], agg:24.24, higherBetter:false},
+  develop:  {target:88, values:[73.48,76.11,76.87,77.06,76.26,79.13,72.33], agg:75.48, higherBetter:true}
+};
+
+// ===== KPI cards (ระดับจังหวัด) =====
+const cardDefs = [
+  {key:"screen",  label:"ร้อยละการคัดกรอง",        unit:"%"},
+  {key:"late",    label:"ร้อยละพบสงสัยล่าช้า",      unit:"%"},
+  {key:"develop", label:"ร้อยละพัฒนาการสมวัย",     unit:"%"}
+];
+const cardsEl = document.getElementById("cards");
+cardDefs.forEach(d=>{
+  const v = DATA[d.key];
+  const met = v.higherBetter ? v.agg >= v.target : v.agg <= v.target;
+  const diff = (v.agg - v.target);
+  const diffTxt = (diff>=0?"+":"") + diff.toFixed(2);
+  const statusCls = met ? "s-ok" : "s-bad";
+  const statusTxt = met ? "ผ่านเป้า" : "ไม่ผ่าน";
+  const pct = Math.min(100, (v.agg / (v.higherBetter?v.target*1.1:v.target*1.8))*100);
+  const col = met ? "var(--green)" : "var(--red)";
+  cardsEl.insertAdjacentHTML("beforeend", `
+    <div class="card">
+      <div class="status ${statusCls}">${statusTxt}</div>
+      <div class="label">${d.label}</div>
+      <div class="val" style="color:${col}">${v.agg.toFixed(2)}<span style="font-size:16px;color:var(--muted)">${d.unit}</span></div>
+      <div class="target">เป้าหมาย ${v.target}% · ${diffTxt}</div>
+      <div class="bar"><i style="width:${pct}%;background:${col}"></i></div>
+    </div>`);
+});
+
+// ===== วาดกราฟแท่ง (SVG) =====
+function drawBar(svgId, def, color){
+  const svg = document.getElementById(svgId);
+  const W=760,H=320, padL=44, padR=16, padT=24, padB=56;
+  const plotW = W-padL-padR, plotH = H-padT-padB;
+  const maxV = 100;
+  const n = DISTRICTS.length;
+  const bw = plotW/n*0.6, gap = plotW/n;
+  let s = "";
+  // เส้นแกน + ตาราง
+  for(let t=0;t<=100;t+=20){
+    const y = padT + plotH*(1 - t/100);
+    s += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="var(--line)" stroke-width="1"/>`;
+    s += `<text x="${padL-8}" y="${y+4}" fill="var(--muted)" font-size="11" text-anchor="end">${t}</text>`;
+  }
+  // เส้นเป้าหมาย
+  const yt = padT + plotH*(1 - def.target/100);
+  s += `<line x1="${padL}" y1="${yt}" x2="${W-padR}" y2="${yt}" stroke="var(--green)" stroke-width="2" stroke-dasharray="6 4"/>`;
+  s += `<text x="${W-padR}" y="${yt-6}" fill="var(--green)" font-size="11" text-anchor="end">เป้า ${def.target}%</text>`;
+  // แท่ง
+  DISTRICTS.forEach((name,i)=>{
+    const v = def.values[i];
+    const x = padL + gap*i + (gap-bw)/2;
+    const y = padT + plotH*(1 - v/100);
+    const h = padT+plotH - y;
+    s += `<rect x="${x}" y="${y}" width="${bw}" height="${h}" rx="3" fill="${color}"/>`;
+    s += `<text x="${x+bw/2}" y="${y-6}" fill="var(--txt)" font-size="12" text-anchor="middle" font-weight="700">${v.toFixed(2)}</text>`;
+    // ชื่ออำเภอ (หมุนบนจอแคบ)
+    const isNarrow = window.innerWidth < 480;
+    const rot = isNarrow ? -35 : 0;
+    const ty = H-padB+18;
+    s += `<text x="${x+bw/2}" y="${ty}" fill="var(--muted)" font-size="11" text-anchor="${isNarrow?'end':'middle'}" transform="rotate(${rot} ${x+bw/2} ${ty})">${name}</text>`;
+  });
+  svg.innerHTML = s;
+}
+drawBar("chart1", DATA.screen,  "var(--blue)");
+drawBar("chart2", DATA.late,    "var(--amber)");
+drawBar("chart3", DATA.develop, "var(--blue)");
+window.addEventListener("resize", ()=>{
+  drawBar("chart1", DATA.screen,  "var(--blue)");
+  drawBar("chart2", DATA.late,    "var(--amber)");
+  drawBar("chart3", DATA.develop, "var(--blue)");
+});
+
+// ===== ตารางสรุป =====
+const tbl = document.getElementById("tbl");
+let html = `<tr><th>อำเภอ</th><th>%คัดกรอง<br>(เป้า 90)</th><th>%สงสัยล่าช้า<br>(เป้า 20)</th><th>%พัฒนาการสมวัย<br>(เป้า 88)</th></tr>`;
+DISTRICTS.forEach((name,i)=>{
+  const sc=DATA.screen.values[i], la=DATA.late.values[i], de=DATA.develop.values[i];
+  const c1 = sc>=90?"pos":"neg", c2 = la<=20?"pos":"neg", c3 = de>=88?"pos":"neg";
+  html += `<tr><td>${name}</td><td class="${c1}">${sc.toFixed(2)}</td><td class="${c2}">${la.toFixed(2)}</td><td class="${c3}">${de.toFixed(2)}</td></tr>`;
+});
+html += `<tr style="font-weight:800"><td>รวม จังหวัด</td><td class="${DATA.screen.agg>=90?'pos':'neg'}">${DATA.screen.agg.toFixed(2)}</td><td class="${DATA.late.agg<=20?'pos':'neg'}">${DATA.late.agg.toFixed(2)}</td><td class="${DATA.develop.agg>=88?'pos':'neg'}">${DATA.develop.agg.toFixed(2)}</td></tr>`;
+tbl.innerHTML = html;
+</script>
+</body>
+</html>
