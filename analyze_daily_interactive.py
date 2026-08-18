@@ -309,7 +309,7 @@ TEMPLATE = r"""<!DOCTYPE html>
     .filterbar{padding:9px 8px;gap:7px;border-radius:14px}.filterbar .controls{width:100%}.filter-label{flex:0 0 auto}.light-badge{align-self:flex-start}.pill,.chip{padding:7px 11px}
     .kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.kpi{min-height:102px;padding:11px;border-radius:15px}.kpi .v{font-size:25px}.kpi .l{font-size:10px}.kpi-top{margin-bottom:7px}
     .card{padding:12px 10px;border-radius:16px;margin-bottom:10px}.card h2{font-size:12px;min-height:0;margin-bottom:9px;padding-bottom:9px;flex-wrap:wrap}.card h2::after{display:none}.chart-powered{margin-left:0;font-size:8px}
-    .chartjs-box.chart-horizontal{overflow:hidden;padding-bottom:0;-webkit-overflow-scrolling:auto;overscroll-behavior-inline:auto}.chartjs-box.chart-horizontal .chart-stage{width:100%;min-width:0}
+    .chartjs-box.chart-horizontal{overflow:hidden;padding-bottom:0;-webkit-overflow-scrolling:auto;overscroll-behavior-inline:auto;max-width:100%}.chartjs-box.chart-horizontal .chart-stage{width:100%;min-width:0;max-width:100%}
     .mobile-category-key{display:grid;grid-template-columns:1fr;gap:4px;list-style:none;margin:7px 0 2px;padding:8px;border:1px dashed #ddd4c8;border-radius:10px;background:#fffdf8}.mobile-category-key li{display:grid;grid-template-columns:22px minmax(0,1fr);gap:6px;align-items:start;font-size:10px;line-height:1.35;color:#4d4842}.mobile-category-key b{display:grid;place-items:center;width:20px;height:20px;border-radius:6px;background:#eeeaff;color:#6246ea;font-size:9px}.mobile-category-key span{overflow-wrap:anywhere}.mobile-category-key small{display:block;margin-top:1px;color:#77716a;font-size:9px;line-height:1.35}
     .legend{font-size:9.5px;gap:7px 10px;margin-top:8px;padding-top:8px}.legend span{white-space:normal}.insight{font-size:11px;padding:9px 10px}.rep-day{padding:10px}.rep-sec{align-items:flex-start}.rep-item{white-space:normal;line-height:1.45}
     .search{width:100%;min-width:0;height:44px;font-size:16px}.scroll{border-radius:10px}.dsumwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}.dsumwrap table{min-width:620px}
@@ -323,12 +323,27 @@ TEMPLATE = r"""<!DOCTYPE html>
   @media(max-width:430px){body{padding-inline:7px}.prov-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
   @media(max-width:390px){.hero{padding-inline:12px}.kpi{min-height:98px}.prov-kpi{padding-inline:9px}}
   @media(max-width:360px){h1{font-size:22px}.kpi .v{font-size:23px}.card{padding-inline:8px}}
+  @media(min-width:769px){
+    .chartjs-box.chart-horizontal{max-width:100%;overflow-x:auto}.chartjs-box.chart-horizontal .chart-stage{max-width:100%}
+    .card{overflow:hidden}
+  }
+  @media(min-width:768px) and (max-width:1024px){
+    .chartjs-box.chart-horizontal{max-width:100%;overflow-x:auto}.chartjs-box.chart-horizontal .chart-stage{max-width:100%}
+    .card{overflow:hidden}
+  }
+  @media(min-width:1024px) and (max-width:1440px){
+    .chartjs-box.chart-horizontal{max-width:100%;overflow-x:auto}.chartjs-box.chart-horizontal .chart-stage{max-width:100%}
+    .card{overflow:hidden}
+  }
   @supports(container-type:inline-size){
     @container dashboard-card (max-width:430px){
       h2{font-size:11.5px;line-height:1.35;overflow-wrap:anywhere}.chart-powered{display:none}.legend{gap:7px 10px}.mobile-category-key{grid-template-columns:1fr}
     }
     @container dashboard-card (min-width:431px) and (max-width:768px){
       h2{font-size:12px}.legend{gap:9px 12px}
+    }
+    @container dashboard-card (min-width:769px){
+      .chartjs-box.chart-horizontal{max-width:100%;overflow-x:auto}.chartjs-box.chart-horizontal .chart-stage{max-width:100%}
     }
   }
 </style></head>
