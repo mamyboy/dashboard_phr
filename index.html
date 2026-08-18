@@ -95,8 +95,8 @@
   .live-status{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;padding:7px 10px;border-radius:999px;background:#ecfdf3;color:#027a48;font-size:11px;font-weight:650;box-shadow:inset 0 0 0 1px #abefc6}
   .live-dot{width:7px;height:7px;border-radius:50%;background:#12b76a;box-shadow:0 0 0 4px rgba(18,183,106,.12);animation:pulse 2.2s ease-in-out infinite}
   @keyframes pulse{50%{box-shadow:0 0 0 7px rgba(18,183,106,0)}}
-  .filterbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;margin-bottom:14px;background:rgba(255,255,255,.88);border-radius:12px;box-shadow:var(--shadow-s)}
-  .filterbar .controls{margin:0}
+  .filterbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:nowrap;padding:10px 12px;margin-bottom:14px;background:rgba(255,255,255,.88);border-radius:12px;box-shadow:var(--shadow-s);min-width:0}
+  .filterbar .controls{min-width:0;flex:1 1 auto}
   .filter-label{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:650;color:#475467}
   .light-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:8px;background:#fff7ed;color:#b54708;font-size:11px;font-weight:650;box-shadow:inset 0 0 0 1px #fedf89}
   .kpis{grid-template-columns:repeat(6,minmax(0,1fr))}
@@ -193,13 +193,13 @@
   .response-empty{display:grid;place-items:center;min-height:180px;padding:20px;border:1px dashed #d8d0c3;border-radius:14px;background:#fbfaf7;color:var(--mut);font-size:11px;text-align:center}
   @media(max-width:900px){
     body{padding:14px 12px 34px}.row{grid-template-columns:1fr}.hero{padding:20px}.hero-art{width:250px;min-width:220px}.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.icd-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
-    .filterbar{align-items:stretch}.filterbar .controls{max-width:100%;flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-inline:contain;padding:2px 2px 6px;scrollbar-width:none}.filterbar .controls::-webkit-scrollbar{display:none}
+    .filterbar{align-items:stretch}.filterbar .controls{max-width:100%;width:100%;flex:1 1 auto;min-width:0;flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-inline:contain;padding:2px 2px 6px;scrollbar-width:none}.filterbar .controls::-webkit-scrollbar{display:none}
     .pill,.chip,.btn{display:inline-flex;align-items:center;justify-content:center;min-height:40px;flex:0 0 auto}.search{min-height:40px}
     .card h2{line-height:1.35;gap:6px;overflow-wrap:anywhere}.chart-powered{flex:0 0 auto}.scroll{max-width:100%;overscroll-behavior-inline:contain;-webkit-overflow-scrolling:touch}.prov-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.response-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
   }
   @media(max-width:680px){
     body{padding:8px 7px 28px;line-height:1.5}.hero{min-height:auto;align-items:flex-start;flex-direction:column;padding:18px 14px;border-radius:20px}.hero-copy{max-width:100%}.hero-art{width:100%;min-width:0;height:122px;align-self:center}.hero-art svg{width:min(100%,320px);height:128px}h1{font-size:25px}.sub{font-size:11.5px}.hero-meta{gap:6px}.live-status,.light-badge{font-size:10px}
-    .filterbar{padding:9px 8px;gap:7px;border-radius:14px}.filterbar .controls{width:100%}.filter-label{flex:0 0 auto}.light-badge{align-self:flex-start}.pill,.chip{padding:7px 11px}
+    .filterbar{padding:9px 8px;gap:7px;border-radius:14px}.filterbar .controls{width:100%;max-width:100%;flex:1 1 auto;min-width:0}.filter-label{flex:0 0 auto}.light-badge{align-self:flex-start}.pill,.chip{padding:7px 11px}
     .kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.kpi{min-height:102px;padding:11px;border-radius:15px}.kpi .v{font-size:25px}.kpi .l{font-size:10px}.kpi-top{margin-bottom:7px}
     .card{padding:12px 10px;border-radius:16px;margin-bottom:10px}.card h2{font-size:12px;min-height:0;margin-bottom:9px;padding-bottom:9px;flex-wrap:wrap}.card h2::after{display:none}.chart-powered{margin-left:0;font-size:8px}
     .chartjs-box.chart-horizontal{overflow:hidden;padding-bottom:0;-webkit-overflow-scrolling:auto;overscroll-behavior-inline:auto}.chartjs-box.chart-horizontal .chart-stage{width:100%;min-width:0}
