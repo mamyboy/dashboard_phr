@@ -20,8 +20,32 @@ INT_FIELDS = {
     "districts",
     "matched",
     "unmatched",
+    "status_pending",
+    "status_in_progress",
+    "status_completed",
+    "status_no_error_found",
+    "status_not_recorded",
+    "action_none_yet",
+    "action_data_corrected",
+    "action_other",
+    "action_not_recorded",
 }
 FLOAT_FIELDS = {"match_rate_pct", "share_pct"}
+
+STATUS_LABELS = {
+    "status_pending": "รอตรวจสอบ",
+    "status_in_progress": "อยู่ระหว่างตรวจสอบ",
+    "status_completed": "ตรวจเสร็จสิ้น",
+    "status_no_error_found": "ไม่พบข้อผิดพลาด",
+    "status_not_recorded": "ยังไม่บันทึก",
+}
+
+ACTION_LABELS = {
+    "action_none_yet": "ยังไม่ดำเนินการ",
+    "action_data_corrected": "แก้ไขข้อมูลแล้ว",
+    "action_other": "ดำเนินการอื่นๆ",
+    "action_not_recorded": "ยังไม่บันทึก",
+}
 
 
 def safe_json_for_script(value: Any) -> str:

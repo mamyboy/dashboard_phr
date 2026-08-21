@@ -44,6 +44,15 @@ for fn, t, label in days_raw:
                 cit=opt(row.get("citizens")),
                 enc=opt(row.get("encounters")),
                 ans=opt(row.get("answered")),
+                status_pending=opt(row.get("status_pending")),
+                status_in_progress=opt(row.get("status_in_progress")),
+                status_completed=opt(row.get("status_completed")),
+                status_no_error_found=opt(row.get("status_no_error_found")),
+                status_not_recorded=opt(row.get("status_not_recorded")),
+                action_none_yet=opt(row.get("action_none_yet")),
+                action_data_corrected=opt(row.get("action_data_corrected")),
+                action_other=opt(row.get("action_other")),
+                action_not_recorded=opt(row.get("action_not_recorded")),
                 name=name, dist=row["district_name"].strip(), time=t)
     days.append(dict(label=label, sortkey=d, time=t, data=data))
 labels = [d["label"] for d in days]
@@ -62,8 +71,19 @@ for code in all_codes:
     cit = [d["data"].get(code, {}).get("cit", 0) for d in days]
     enc = [d["data"].get(code, {}).get("enc", 0) or 0 for d in days]
     ans = [d["data"].get(code, {}).get("ans", 0) or 0 for d in days]
+    # status/action fields (latest snapshot)
+    latest_data = days[-1]["data"].get(code, {}) if days else {}
     unit_recs.append(dict(code=code, name=canon[code]["name"], dist=canon[code]["dist"],
-                          masks=masks, cit=cit, enc=enc, ans=ans, last=canon[code]["masks"]))
+                          masks=masks, cit=cit, enc=enc, ans=ans, last=canon[code]["masks"],
+                          status_pending=latest_data.get("status_pending", 0),
+                          status_in_progress=latest_data.get("status_in_progress", 0),
+                          status_completed=latest_data.get("status_completed", 0),
+                          status_no_error_found=latest_data.get("status_no_error_found", 0),
+                          status_not_recorded=latest_data.get("status_not_recorded", 0),
+                          action_none_yet=latest_data.get("action_none_yet", 0),
+                          action_data_corrected=latest_data.get("action_data_corrected", 0),
+                          action_other=latest_data.get("action_other", 0),
+                          action_not_recorded=latest_data.get("action_not_recorded", 0)))
 # sort by last masks desc
 unit_recs.sort(key=lambda u: -u["last"])
 
@@ -181,6 +201,13 @@ TEMPLATE = r"""<!DOCTYPE html>
   .rep-item{font-size:12.5px;background:var(--card);border:1px solid var(--line);padding:3px 10px;border-radius:8px;color:var(--txt)}
   .rep-item b{font-weight:800}
   .rep-empty{font-size:12.5px;color:var(--mut);font-style:italic}
+
+  /* Status/Action badges for unit table */
+  .badge{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;line-height:1.4;white-space:nowrap}
+  .badge-status{background:rgba(99,91,255,.15);color:#635bff;margin:1px}
+  .badge-action{background:rgba(18,183,106,.15);color:#12b76a;margin:1px}
+  .status-cell,.action-cell{white-space:nowrap;min-width:120px}
+  .status-cell .badge,.action-cell .badge{vertical-align:middle}
 
   /* Clinical Aurora Light — Stripe depth × Vercel precision */
   :root{--bg:#f6f8fc;--card:#fff;--card2:#f8faff;--line:#e6eaf2;--txt:#101828;--mut:#667085;
@@ -913,7 +940,7 @@ function renderUnitTable(){
     if(k==='responseRate')return dir*((metric(a).rate??-1)-(metric(b).rate??-1));
     return 0;
   });
-  const head=['หน่วยบริการ','อำเภอ',...activeIdx().map(i=>DATA.labels[i]),'ล่าสุด','ตอบกลับ','ยังไม่ตอบ','อัตราตอบกลับ'].map((h,i)=>{
+  const head=['หน่วยบริการ','อำเภอ',...activeIdx().map(i=>DATA.labels[i]),'ล่าสุด','ตอบกลับ','ยังไม่ตอบ','อัตราตอบกลับ','สถานะ','การดำเนินการ'].map((h,i)=>{
     const arr=state.sortKey===colName(i)?' <span class="arr">'+(state.sortDir>0?'▲':'▼')+'</span>':'';
     return '<th data-col="'+i+'">'+h+arr+'</th>';
   }).join('');
@@ -932,11 +959,31 @@ function renderUnitTable(){
       cells+='<td class="num '+cls+'">'+txt+'</td>';
     });
     const response=metric(x),rate=response.rate===null?'—':Math.round(response.rate*10)/10+'%';
+    // Build status badges
+    const statusFields = [
+      {key:'status_pending', label:'รอตรวจสอบ'},
+      {key:'status_in_progress', label:'อยู่ระหว่างตรวจสอบ'},
+      {key:'status_completed', label:'ตรวจเสร็จสิ้น'},
+      {key:'status_no_error_found', label:'ไม่พบข้อผิดพลาด'},
+      {key:'status_not_recorded', label:'ยังไม่บันทึก'}
+    ];
+    const actionFields = [
+      {key:'action_none_yet', label:'ยังไม่ดำเนินการ'},
+      {key:'action_data_corrected', label:'แก้ไขข้อมูลแล้ว'},
+      {key:'action_other', label:'ดำเนินการอื่นๆ'},
+      {key:'action_not_recorded', label:'ยังไม่บันทึก'}
+    ];
+
+    const statusHtml = statusFields.map(f => x[f.key] ? `<span class="badge badge-status" title="${f.label}">${x[f.key]}</span>` : '').join(' ');
+    const actionHtml = actionFields.map(f => x[f.key] ? `<span class="badge badge-action" title="${f.label}">${x[f.key]}</span>` : '').join(' ');
+
     return '<tr><td>'+x.name+'</td><td class="mut">'+x.dist+'</td>'+cells+
       '<td class="num strong">'+response.masks+'</td>'+
       '<td class="num '+(response.answered>0?'c-up':'c-flat')+'">'+response.answered+'</td>'+
       '<td class="num '+(response.pending>0?'c-down':'c-flat')+'">'+response.pending+'</td>'+
-      '<td class="num '+(response.rate===100?'c-up':response.rate===0?'c-down':'c-flat')+'">'+rate+'</td></tr>';
+      '<td class="num '+(response.rate===100?'c-up':response.rate===0?'c-down':'c-flat')+'">'+rate+'</td>'+
+      '<td class="status-cell">'+statusHtml+'</td>'+
+      '<td class="action-cell">'+actionHtml+'</td></tr>';
   }).join('');
   document.querySelector('#unitTable tbody').innerHTML=rows;
   document.querySelectorAll('#unitTable th').forEach(th=>{
