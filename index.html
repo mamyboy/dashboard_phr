@@ -820,61 +820,61 @@ function hbarStacked(el,items,stackKeys,stackColors,stackLabels){
   let isStacked = localStorage.getItem(chartKey) !== 'grouped';
   
   function rebuildChart(stacked) {
-    const chartOpts = {
-      type: 'bar',
-      data: { labels, datasets },
-      options: {
-        indexAxis: 'y',
-        layout: { padding: { top: 6, right: p.phone ? 45 : 72, left: 0, bottom: 2 } },
-        scales: {
-          ...chartScales(true),
-          x: { ...chartScales(true).x, stacked, title: { display: true, text: 'จำนวนเคส', font: { size: p.phone ? 10 : 11 } } },
-          y: { ...chartScales(true).y, stacked }
-        },
-        plugins: {
-          legend: { display: !p.phone, position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 7, padding: p.phone ? 8 : 11, font: { size: p.phone ? 8 : 9 } } },
-          datalabels: {
-            display: true,
-            color: '#171720',
-            anchor: stacked ? 'end' : 'end',
-            align: stacked ? 'right' : 'end',
-            clamp: true,
-            clip: false,
-            font: { size: p.phone ? 9 : 10, weight: '700' },
-            formatter: (v, c) => {
-              const item = items[c.dataIndex];
-              const total = Object.values(item.stacks || {}).reduce((a, b) => a + b, 0);
-              if (!stacked) return v ? `${v}` : '';
-              return total ? `${v} (${Math.round(v / total * 100)}%)` : '';
-            }
+      const chartOpts = {
+        type: 'bar',
+        data: { labels, datasets },
+        options: {
+          indexAxis: 'y',
+          layout: { padding: { top: 6, right: p.phone ? 45 : 72, left: 0, bottom: 2 } },
+          scales: {
+            ...chartScales(true),
+            x: { ...chartScales(true).x, stacked, title: { display: true, text: 'จำนวนเคส', font: { size: p.phone ? 10 : 11 } } },
+            y: { ...chartScales(true).y, stacked }
           },
-          tooltip: {
-            ...chartTooltip(),
-            callbacks: {
-              title: c => items[c[0].dataIndex].name,
-              label: c => {
-                const item = items[c[0].dataIndex];
-                const val = c.raw;
+          plugins: {
+            legend: { display: !p.phone, position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 7, padding: p.phone ? 8 : 11, font: { size: p.phone ? 8 : 9 } } },
+            datalabels: {
+              display: true,
+              color: '#171720',
+              anchor: stacked ? 'end' : 'end',
+              align: stacked ? 'right' : 'end',
+              clamp: true,
+              clip: false,
+              font: { size: p.phone ? 9 : 10, weight: '700' },
+              formatter: (v, c) => {
+                const item = items[c.dataIndex];
                 const total = Object.values(item.stacks || {}).reduce((a, b) => a + b, 0);
-                const pct = total ? Math.round(val / total * 100) : 0;
-                return `${c.dataset.label}: ${val} (${pct}%)`;
+                if (!stacked) return v ? `${v}` : '';
+                return total ? `${v} (${Math.round(v / total * 100)}%)` : '';
+              }
+            },
+            tooltip: {
+              ...chartTooltip(),
+              callbacks: {
+                title: c => items[c[0].dataIndex].name,
+                label: c => {
+                  const item = items[c[0].dataIndex];
+                  const val = c.raw;
+                  const total = Object.values(item.stacks || {}).reduce((a, b) => a + b, 0);
+                  const pct = total ? Math.round(val / total * 100) : 0;
+                  return `${c.dataset.label}: ${val} (${pct}%)`;
+                }
               }
             }
           }
         }
-      }
-    }, height;
+      }, height;
+   
+      if (CHARTS[el.id]) { CHARTS[el.id].destroy(); delete CHARTS[el.id]; }
+      const key = document.querySelector(`[data-chart-key="${el.id}"]`); if (key) key.remove();
+      el.className = 'chartbox'; el.style.height = 'auto';
+      mountChart(el, chartOpts, height);
+      renderMobileCategoryKey(el, items);
     
-    if (CHARTS[el.id]) { CHARTS[el.id].destroy(); delete CHARTS[el.id]; }
-    const key = document.querySelector(`[data-chart-key="${el.id}"]`); if (key) key.remove();
-    el.className = 'chartbox'; el.style.height = 'auto';
-    mountChart(el, chartOpts, height);
-    renderMobileCategoryKey(el, items);
-    
-    // Update toggle button text
-    const btn = document.getElementById('stackToggle');
-    if (btn) btn.textContent = stacked ? '📊 แบบซ้อน (Stacked)' : '📊 แบบแยก (Grouped)';
-  }
+      // Update toggle button text
+      const btn = document.getElementById('stackToggle');
+      if (btn) btn.textContent = stacked ? '📊 แบบซ้อน (Stacked)' : '📊 แบบแยก (Grouped)';
+    }
   
   // Initial render
   rebuildChart(isStacked);
