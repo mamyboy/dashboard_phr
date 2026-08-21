@@ -1,13 +1,29 @@
 import re
+import subprocess
 import unittest
 from pathlib import Path
 
 
 ROOT = Path(__file__).parents[1]
 SOURCE = ROOT.joinpath("analyze_daily_interactive.py")
+OUTPUT = ROOT.joinpath("index.html")
 
 
 class UnitResponseDimensionTests(unittest.TestCase):
+    def test_generated_dashboard_javascript_parses(self):
+        html = OUTPUT.read_text(encoding="utf-8")
+        scripts = re.findall(r"<script[^>]*>(.*?)</script>", html, re.DOTALL)
+        self.assertGreaterEqual(len(scripts), 3)
+        dashboard_script = scripts[-1]
+        result = subprocess.run(
+            ["node", "--check", "-"],
+            input=dashboard_script,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+
     def test_generator_contains_interactive_unit_response_dimension(self):
         source = SOURCE.read_text(encoding="utf-8")
         self.assertIn('id="unitResponseKpis"', source)
