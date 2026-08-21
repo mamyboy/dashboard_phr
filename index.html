@@ -789,16 +789,115 @@ function hbarStacked(el,items,stackKeys,stackColors,stackLabels){
   // stackLabels: object key->label for legend
   const p=viewportProfile(),maxChars=p.tablet?32:52,labels=items.map((i,n)=>p.phone?String(n+1):wrapChartLabel(i.name,maxChars));
   const maxLines=Math.max(1,...labels.map(l=>Array.isArray(l)?l.length:1)),row=p.phone?29+maxLines*9:(p.tablet?27+maxLines*8:24+maxLines*7),height=Math.max(p.phone?265:230,Math.min(760,items.length*row+50));
+  
+  // ─── Enhanced colors with better contrast & white borders for separation ───
+  const enhancedColors = {
+    status_completed: '#059669',      // emerald-600 (darker, more visible)
+    status_in_progress: '#1d4ed8',    // blue-700
+    status_pending: '#ea580c',        // orange-600
+    status_other: '#7c3aed'           // violet-600
+  };
+  const enhancedLabels = {
+    status_completed: '✅ ตรวจเสร็จสิ้น',
+    status_in_progress: '🔵 อยู่ระหว่างตรวจสอบ',
+    status_pending: '🟠 รอตรวจสอบ',
+    status_other: '🟣 อื่นๆ'
+  };
+  
   const datasets=stackKeys.map(key=>({
-    label:stackLabels[key]||key,
+    label:enhancedLabels[key]||stackLabels[key]||key,
     data:items.map(item=>item.stacks[key]||0),
-    backgroundColor:stackColors[key]||'#999',
+    backgroundColor:enhancedColors[key]||stackColors[key]||'#999',
+    borderColor: '#ffffff',           // ① white border between segments
+    borderWidth: 1,
     borderRadius:p.phone?6:8,
     borderSkipped:false,
     barThickness:p.phone?13:16
   }));
-  mountChart(el,{type:'bar',data:{labels,datasets},options:{indexAxis:'y',layout:{padding:{top:6,right:p.phone?45:72,left:0,bottom:2}},scales:{...chartScales(true),x:{...chartScales(true).x,stacked:true},y:{...chartScales(true).y,stacked:true}},plugins:{legend:{display:!p.phone,position:'bottom',labels:{usePointStyle:true,pointStyle:'circle',boxWidth:7,padding:p.phone?8:11,font:{size:p.phone?8:9}}},datalabels:{display:true,color:'#171720',anchor:'end',align:'right',clamp:true,clip:false,font:{size:p.phone?9:10,weight:'700'},formatter:(v,c)=>{const item=items[c.dataIndex];const total=Object.values(item.stacks||{}).reduce((a,b)=>a+b,0);return total?`${v} (${Math.round(v/total*100)}%)`:''}},tooltip:{...chartTooltip(),callbacks:{title:c=>items[c[0].dataIndex].name,label:c=>`${c.dataset.label}: ${c.raw} (${c.raw>0?Math.round(c.raw/items[c[0].dataIndex].stacks[c.dataset.label]*100):0}%)`}}}}},height);
-  renderMobileCategoryKey(el,items);
+  
+  // ② Add toggle button for Stacked ↔ Grouped view
+  const chartKey = `chart-mode-${el.id}`;
+  let isStacked = localStorage.getItem(chartKey) !== 'grouped';
+  
+  function rebuildChart(stacked) {
+    const chartOpts = {
+      type: 'bar',
+      data: { labels, datasets },
+      options: {
+        indexAxis: 'y',
+        layout: { padding: { top: 6, right: p.phone ? 45 : 72, left: 0, bottom: 2 } },
+        scales: {
+          ...chartScales(true),
+          x: { ...chartScales(true).x, stacked, title: { display: true, text: 'จำนวนเคส', font: { size: p.phone ? 10 : 11 } } },
+          y: { ...chartScales(true).y, stacked }
+        },
+        plugins: {
+          legend: { display: !p.phone, position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 7, padding: p.phone ? 8 : 11, font: { size: p.phone ? 8 : 9 } } },
+          datalabels: {
+            display: true,
+            color: '#171720',
+            anchor: stacked ? 'end' : 'end',
+            align: stacked ? 'right' : 'end',
+            clamp: true,
+            clip: false,
+            font: { size: p.phone ? 9 : 10, weight: '700' },
+            formatter: (v, c) => {
+              const item = items[c.dataIndex];
+              const total = Object.values(item.stacks || {}).reduce((a, b) => a + b, 0);
+              if (!stacked) return v ? `${v}` : '';
+              return total ? `${v} (${Math.round(v / total * 100)}%)` : '';
+            }
+          },
+          tooltip: {
+            ...chartTooltip(),
+            callbacks: {
+              title: c => items[c[0].dataIndex].name,
+              label: c => {
+                const item = items[c[0].dataIndex];
+                const val = c.raw;
+                const total = Object.values(item.stacks || {}).reduce((a, b) => a + b, 0);
+                const pct = total ? Math.round(val / total * 100) : 0;
+                return `${c.dataset.label}: ${val} (${pct}%)`;
+              }
+            }
+          }
+        }
+      }
+    }, height;
+    
+    if (CHARTS[el.id]) { CHARTS[el.id].destroy(); delete CHARTS[el.id]; }
+    const key = document.querySelector(`[data-chart-key="${el.id}"]`); if (key) key.remove();
+    el.className = 'chartbox'; el.style.height = 'auto';
+    mountChart(el, chartOpts, height);
+    renderMobileCategoryKey(el, items);
+    
+    // Update toggle button text
+    const btn = document.getElementById('stackToggle');
+    if (btn) btn.textContent = stacked ? '📊 แบบซ้อน (Stacked)' : '📊 แบบแยก (Grouped)';
+  }
+  
+  // Initial render
+  rebuildChart(isStacked);
+  
+  // Add toggle button if not exists
+  setTimeout(() => {
+    const container = el.parentElement;
+    if (!document.getElementById('stackToggle')) {
+      const btn = document.createElement('button');
+      btn.id = 'stackToggle';
+      btn.type = 'button';
+      btn.className = 'response-mode';
+      btn.style.marginLeft = '8px';
+      btn.textContent = isStacked ? '📊 แบบซ้อน (Stacked)' : '📊 แบบแยก (Grouped)';
+      btn.onclick = () => {
+        isStacked = !isStacked;
+        localStorage.setItem(chartKey, isStacked ? 'stacked' : 'grouped');
+        rebuildChart(isStacked);
+      };
+      const toolbar = container.querySelector('.response-toolbar');
+      if (toolbar) toolbar.appendChild(btn);
+    }
+  }, 0);
 }
 function stacked(el,labels,distData){
   const p=viewportProfile(),displayLabels=labels.map(compactDate);
