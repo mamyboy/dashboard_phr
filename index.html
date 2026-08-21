@@ -738,7 +738,9 @@ function hbar(el,items){
   const maxLines=Math.max(1,...labels.map(l=>Array.isArray(l)?l.length:1)),row=p.phone?29+maxLines*9:(p.tablet?27+maxLines*8:24+maxLines*7),height=Math.max(p.phone?265:230,Math.min(760,items.length*row+50));
   const palette=['#6246ea','#246bfd','#078a52','#f0a202','#e84d5b','#9a62db'];
   const vals=items.map(i=>i.val),colors=items.map((i,n)=>i.color||palette[n%palette.length]);
-  mountChart(el,{type:'bar',data:{labels,datasets:[{label:'ค่า',data:vals,backgroundColor:colors,borderRadius:p.phone?6:8,borderSkipped:false,barThickness:p.phone?13:16}]},options:{indexAxis:'y',layout:{padding:{top:6,right:p.phone?45:72,left:0,bottom:2}},scales:chartScales(true),plugins:{datalabels:{display:true,color:'#171720',anchor:'end',align:'right',clamp:true,clip:false,font:{size:p.phone?9:10,weight:'700'},formatter:(v,c)=>`${v}${items[c.dataIndex].extra?' '+items[c.dataIndex].extra:''}`},tooltip:{...chartTooltip(),callbacks:{title:c=>items[c[0].dataIndex].name,label:c=>`${c.raw} ${items[c.dataIndex].tooltipExtra||items[c.dataIndex].extra||''}`}}}}},height);
+  // Support dashed border for items with hasCorrection (momentum chart)
+  const borderDash=items.map(i=>i.hasCorrection?[6,4]:[]);
+  mountChart(el,{type:'bar',data:{labels,datasets:[{label:'ค่า',data:vals,backgroundColor:colors,borderColor:colors,borderWidth:1,borderDash:borderDash,borderSkipped:false,borderRadius:p.phone?6:8,barThickness:p.phone?13:16}]},options:{indexAxis:'y',layout:{padding:{top:6,right:p.phone?45:72,left:0,bottom:2}},scales:chartScales(true),plugins:{datalabels:{display:true,color:'#171720',anchor:'end',align:'right',clamp:true,clip:false,font:{size:p.phone?9:10,weight:'700'},formatter:(v,c)=>`${v}${items[c.dataIndex].extra?' '+items[c.dataIndex].extra:''}`},tooltip:{...chartTooltip(),callbacks:{title:c=>items[c[0].dataIndex].name,label:c=>`${c.raw} ${items[c.dataIndex].tooltipExtra||items[c.dataIndex].extra||''}`}}}}},height);
   renderMobileCategoryKey(el,items);
 }
 function hbarStacked(el,items,stackKeys,stackColors,stackLabels){
@@ -863,15 +865,24 @@ function renderPareto(){
   const u=selUnits();const lastIdx=activeIdx().slice(-1)[0];
   const ranked=u.map(x=>({x,v:x.masks[lastIdx]})).sort((a,b)=>b.v-a.v);
   const tot=ranked.reduce((s,o)=>s+o.v,0)||1;
-  let cum=0;const items=ranked.slice(0,8).map(o=>{cum+=o.v;
-    return {name:o.x.name,val:o.v,extra:`(${Math.round(100*cum/tot)}%)`,suffix:''};});
+  let cum=0;const items=ranked.slice(0,8).map(o=>{
+    cum+=o.v;
+    // Add status badge info
+    const unit=o.x;
+    const primaryStatus=getPrimaryStatus(unit);
+    const primaryAction=getPrimaryAction(unit);
+    return {name:o.x.name,val:o.v,extra:`(${Math.round(100*cum/tot)}%)`,suffix:'',primaryStatus,primaryAction};
+  });
   hbar(document.getElementById('paretoChart'),items);
 }
 function renderMom(){
   const u=selUnits();const idx=activeIdx();
   const items=u.map(x=>{const f=x.masks[idx[0]],l=x.masks[idx[idx.length-1]];
     return {x,f,l,d:l-f};}).filter(o=>o.d>0).sort((a,b)=>b.d-a.d)
-    .map(o=>({name:o.x.name,val:o.d,extra:`(${o.f}→${o.l})`,suffix:''}));
+    .map(o=>{
+      const hasCorrection=o.x.action_data_corrected>0;
+      return {name:o.x.name,val:o.d,extra:`(${o.f}→${o.l})`,suffix:'',hasCorrection};
+    });
   if(!items.length){document.getElementById('momChart').innerHTML='<div class="mut">ไม่มีหน่วยใดเพิ่มขึ้นในช่วงที่เลือก</div>';return;}
   hbar(document.getElementById('momChart'),items);
 }
@@ -1105,12 +1116,22 @@ function renderReport(){
   let html='';
   targetDays.forEach(di=>{
     const prev=di-1;
-    const up=[],neu=[],down=[];
+    const up=[],neu=[],down=[],statusChg=[];
     DATA.units.forEach(u=>{
       const cur=u.masks[di], pv=(di>0)?(u.masks[prev]||0):0;
       if(di===0){if(cur>0)neu.push(u);return;}
       if(cur && !pv){neu.push(u);}
       else{const d=cur-pv; if(d>0)up.push([u,d]); else if(d<0)down.push([u,-d]);}
+      // Check status/action changes
+      if(di>0){
+        const prevStatus=getPrimaryStatusAt(u, prev);
+        const currStatus=getPrimaryStatusAt(u, di);
+        const prevAction=getPrimaryActionAt(u, prev);
+        const currAction=getPrimaryActionAt(u, di);
+        if(prevStatus!==currStatus || prevAction!==currAction){
+          statusChg.push({u, prevStatus, currStatus, prevAction, currAction});
+        }
+      }
     });
     up.sort((a,b)=>b[1]-a[1]);
     const dateLabel=DATA.labels[di];
@@ -1118,15 +1139,37 @@ function renderReport(){
     html+=repList('🟢 เพิ่มขึ้น',up.map(([u,d])=>`${u.name} <b>+${d}</b> (เป็น ${u.masks[di]})`),'c-up','ไม่มีหน่วยเพิ่มขึ้น');
     html+=repList('🟠 ใหม่',neu.map(u=>`${u.name} <b>+${u.masks[di]}</b> (ปรากฏครั้งแรก)`),'c-new','ไม่มีหน่วยใหม่');
     html+=repList('🔴 ลดลง',down.map(([u,d])=>`${u.name} <b>−${d}</b> (เหลือ ${u.masks[di]})`),'c-down','ไม่มีหน่วยลดลง');
+    // Status changes
+    html+=repList('🏷️ สถานะเปลี่ยน',statusChg.map(s=>`${s.u.name}: ${statusLabel(s.prevStatus)}→${statusLabel(s.currStatus)} ${actionLabel(s.prevAction)}→${actionLabel(s.currAction)}`),'c-new', 'ไม่มีสถานะเปลี่ยน');
     html+=`</div>`;
   });
   document.getElementById('dailyReport').innerHTML=html;
 }
-function repList(title,items,cls,empty){
-  let s=`<div class="rep-sec"><span class="rep-badge ${cls}">${title}</span>`;
-  if(!items.length)s+=`<span class="rep-empty">${empty}</span>`;
-  else items.forEach(t=>s+=`<span class="rep-item">${t}</span>`);
-  s+='</div>';return s;
+function getPrimaryStatusAt(unit, dayIdx){
+  const fields=['status_pending','status_in_progress','status_completed','status_no_error_found','status_not_recorded'];
+  let max=-1, primary='all';
+  for(const f of fields){
+    const arr=unit[f]; if(!arr) continue;
+    const v=arr[dayIdx]||0; if(v>max){max=v; primary=f;}
+  }
+  return max>0?primary:'all';
+}
+function getPrimaryActionAt(unit, dayIdx){
+  const fields=['action_none_yet','action_data_corrected','action_other','action_not_recorded'];
+  let max=-1, primary='all';
+  for(const f of fields){
+    const arr=unit[f]; if(!arr) continue;
+    const v=arr[dayIdx]||0; if(v>max){max=v; primary=f;}
+  }
+  return max>0?primary:'all';
+}
+function statusLabel(key){
+  const map={all:'—',status_pending:'รอตรวจสอบ',status_in_progress:'อยู่ระหว่างตรวจสอบ',status_completed:'ตรวจเสร็จสิ้น',status_no_error_found:'ไม่พบข้อผิดพลาด',status_not_recorded:'ยังไม่บันทึก'};
+  return map[key]||key;
+}
+function actionLabel(key){
+  const map={all:'—',action_none_yet:'ยังไม่ดำเนินการ',action_data_corrected:'แก้ไขข้อมูลแล้ว',action_other:'ดำเนินการอื่นๆ',action_not_recorded:'ยังไม่บันทึก'};
+  return map[key]||key;
 }
 
 // ---- controls ----
