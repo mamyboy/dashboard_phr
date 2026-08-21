@@ -796,7 +796,7 @@ function renderMobileCategoryKey(el,items){
 }
 function hbar(el,items){
   const p=viewportProfile(),maxChars=p.tablet?28:48,labels=items.map((i,n)=>p.phone?String(n+1):wrapChartLabel(i.name,maxChars));
-  const maxLines=Math.max(1,...labels.map(l=>Array.isArray(l)?l.length:1)),row=p.phone?34+maxLines*10:(p.tablet?30+maxLines*9:26+maxLines*8),height=Math.max(p.phone?280:250,Math.min(800,items.length*row+60));  const palette=['#6246ea','#246bfd','#078a52','#f0a202','#e84d5b','#9a62db'];
+  const maxLines=Math.max(1,...labels.map(l=>Array.isArray(l)?l.length:1)),row=p.phone?38+maxLines*12:(p.tablet?34+maxLines*11:36+maxLines*12),height=Math.max(p.phone?280:250,Math.min(800,items.length*row+60));  const palette=['#6246ea','#246bfd','#078a52','#f0a202','#e84d5b','#9a62db'];
   const vals=items.map(i=>i.val),colors=items.map((i,n)=>i.color||palette[n%palette.length]);
   // Support dashed border for items with hasCorrection (momentum chart)
   const borderDash=items.map(i=>i.hasCorrection?[6,4]:[]);
