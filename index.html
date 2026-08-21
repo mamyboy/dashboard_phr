@@ -759,7 +759,10 @@ const KI={
   speed:`<span class="kico"><svg viewBox="0 0 24 24"><path d="M13 2 5 13h6l-1 9 9-13h-6Z"/></svg></span>`,
   hospital:`<span class="kico"><svg viewBox="0 0 24 24"><path d="M5 21V5h14v16M3 21h18M9 9h6M12 6v6M9 15h2M14 15h2M10 21v-3h4v3"/></svg></span>`,
   ratio:`<span class="kico"><svg viewBox="0 0 24 24"><path d="M12 3v18M5 7h14M5 7l-3 6h6L5 7ZM19 7l-3 6h6l-3-6Z"/></svg></span>`,
-  shield:`<span class="kico"><svg viewBox="0 0 24 24"><path d="M12 3 4.5 6v5.5c0 4.8 3.2 8 7.5 9.5 4.3-1.5 7.5-4.7 7.5-9.5V6Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></svg></span>`
+  shield:`<span class="kico"><svg viewBox="0 0 24 24"><path d="M12 3 4.5 6v5.5c0 4.8 3.2 8 7.5 9.5 4.3-1.5 7.5-4.7 7.5-9.5V6Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></svg></span>`,
+  check:`<span class="kico"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg></span>`,
+  clock:`<span class="kico"><svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg></span>`,
+  flag:`<span class="kico"><svg viewBox="0 0 24 24"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg></span>`
 };
 function renderKPI(){
   const u=selUnits();const {idx,m,c}=totalsFor(u);
@@ -770,6 +773,10 @@ function renderKPI(){
   const lastIdx=idx[idx.length-1];
   const present=u.filter(x=>x.masks[lastIdx]>0).length;
   const ratio=(c[c.length-1])?(Math.round(last/c[c.length-1]*100)/100):0;
+  // New KPIs from status/action
+  const completed=u.filter(x=>x.status_completed>0).length;
+  const pendingReview=u.filter(x=>x.status_pending>0||x.status_in_progress>0).length;
+  const actionReq=u.filter(x=>x.action_data_corrected>0||x.action_other>0).length;
   const box=document.getElementById('kpiBox');
   box.innerHTML=`
    <div class="kpi"><div class="kpi-top">${KI.masks}<span class="kmini">MASKS</span></div><div class="v a">${last}</div><div class="l">รวม${state.dist!=='all'?' · '+state.dist:''} · ${DATA.labels[lastIdx]}</div></div>
@@ -777,7 +784,10 @@ function renderKPI(){
    <div class="kpi"><div class="kpi-top">${KI.speed}<span class="kmini">GROWTH</span></div><div class="v a">${avg}%</div><div class="l">อัตราเติบโตเฉลี่ยต่อวัน</div></div>
    <div class="kpi"><div class="kpi-top">${KI.hospital}<span class="kmini">UNITS</span></div><div class="v">${present}</div><div class="l">หน่วยบริการที่มีข้อมูลล่าสุด</div></div>
    <div class="kpi"><div class="kpi-top">${KI.ratio}<span class="kmini">RATIO</span></div><div class="v am">${ratio}</div><div class="l">Masks ต่อประชาชนโดยรวม</div></div>
-   <div class="kpi"><div class="kpi-top">${KI.shield}<span class="kmini">QUALITY</span></div><div class="v">100%</div><div class="l">ข้อมูลจับคู่สำเร็จทุกหน่วย</div></div>`;
+   <div class="kpi"><div class="kpi-top">${KI.shield}<span class="kmini">QUALITY</span></div><div class="v">100%</div><div class="l">ข้อมูลจับคู่สำเร็จทุกหน่วย</div></div>
+   <div class="kpi"><div class="kpi-top">${KI.check}<span class="kmini">ตรวจเสร็จสิ้น</span></div><div class="v g">${completed}</div><div class="l">${present>0?Math.round(completed/present*100):0}% ของหน่วยที่มีข้อมูล</div></div>
+   <div class="kpi"><div class="kpi-top">${KI.clock}<span class="kmini">รอดำเนินการ</span></div><div class="v am">${pendingReview}</div><div class="l">${present>0?Math.round(pendingReview/present*100):0}% รอ/กำลังตรวจ</div></div>
+   <div class="kpi"><div class="kpi-top">${KI.flag}<span class="kmini">ต้องติดตาม</span></div><div class="v a">${actionReq}</div><div class="l">${present>0?Math.round(actionReq/present*100):0}% มีการแก้ไข/ดำเนินการอื่น</div></div>`;
 }
 function renderProvince(){
   const zone=document.getElementById('provinceZone');if(!PROVINCE){zone.hidden=true;return;}
