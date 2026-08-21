@@ -567,16 +567,36 @@ TEMPLATE = r"""<!DOCTYPE html>
 /*__PROVINCE__*/
 /*__ICD10__*/
 const DIST_COLORS={'ละงู':'#635bff','เมืองสตูล':'#0a72ef','ควนกาหลง':'#f79009','ควนโดน':'#9b51e0','ทุ่งหว้า':'#12b76a'};
-const state={dist:'all', days:DATA.labels.map((_,i)=>i), theme:'light', sortKey:'name', sortDir:1, search:'', reportDay:-1, responseMode:'answered'};
+const state={dist:'all', days:DATA.labels.map((_,i)=>i), theme:'light', sortKey:'name', sortDir:1, search:'', reportDay:-1, responseMode:'answered', statusFilter:'all', actionFilter:'all'};
 const tip=document.getElementById('tip');
 function showTip(e,txt){tip.textContent=txt;tip.style.opacity=1;tip.style.left=(e.clientX+12)+'px';tip.style.top=(e.clientY+12)+'px';}
 function hideTip(){tip.style.opacity=0;}
 
 // ---- filtering ----
+function getPrimaryStatus(unit){
+  const statusFields = ['status_pending','status_in_progress','status_completed','status_no_error_found','status_not_recorded'];
+  let maxVal = -1, primary = 'all';
+  for(const f of statusFields){
+    const v = unit[f] || 0;
+    if(v > maxVal){ maxVal = v; primary = f; }
+  }
+  return maxVal > 0 ? primary : 'all';
+}
+function getPrimaryAction(unit){
+  const actionFields = ['action_none_yet','action_data_corrected','action_other','action_not_recorded'];
+  let maxVal = -1, primary = 'all';
+  for(const f of actionFields){
+    const v = unit[f] || 0;
+    if(v > maxVal){ maxVal = v; primary = f; }
+  }
+  return maxVal > 0 ? primary : 'all';
+}
 function selUnits(){
   let u=DATA.units;
   if(state.dist!=='all') u=u.filter(x=>x.dist===state.dist);
   if(state.search){const s=state.search.toLowerCase();u=u.filter(x=>x.name.toLowerCase().includes(s)||x.dist.toLowerCase().includes(s));}
+  if(state.statusFilter!=='all') u=u.filter(x=>getPrimaryStatus(x)===state.statusFilter);
+  if(state.actionFilter!=='all') u=u.filter(x=>getPrimaryAction(x)===state.actionFilter);
   return u;
 }
 function activeIdx(){return state.days.slice().sort((a,b)=>a-b);}
@@ -1057,6 +1077,24 @@ function buildControls(){
   });
   document.getElementById('unitSearch').oninput=e=>{state.search=e.target.value;renderUnitTable();};
   document.querySelectorAll('[data-response-mode]').forEach(button=>{button.onclick=()=>{state.responseMode=button.dataset.responseMode;renderUnitResponse();};});
+  // Status filter
+  const sf=document.createElement('div');sf.className='controls';sf.innerHTML='<span class="filter-label">🏷️ สถานะ</span><span id="statusFilter"></span>';
+  document.querySelector('.filterbar').appendChild(sf);
+  const statusOptions=[['all','ทั้งหมด'],['status_pending','รอตรวจสอบ'],['status_in_progress','อยู่ระหว่างตรวจสอบ'],['status_completed','ตรวจเสร็จสิ้น'],['status_no_error_found','ไม่พบข้อผิดพลาด'],['status_not_recorded','ยังไม่บันทึก']];
+  const sfc=document.getElementById('statusFilter');
+  statusOptions.forEach(([v,label])=>{const b=document.createElement('span');b.className='pill'+(v==='all'?' on':'');b.textContent=label;b.dataset.v=v;
+    b.onclick=()=>{state.statusFilter=v;document.querySelectorAll('#statusFilter .pill').forEach(p=>p.classList.remove('on'));b.classList.add('on');renderAll();};
+    sfc.appendChild(b);
+  });
+  // Action filter
+  const af=document.createElement('div');af.className='controls';af.innerHTML='<span class="filter-label">⚡ การดำเนินการ</span><span id="actionFilter"></span>';
+  document.querySelector('.filterbar').appendChild(af);
+  const actionOptions=[['all','ทั้งหมด'],['action_none_yet','ยังไม่ดำเนินการ'],['action_data_corrected','แก้ไขข้อมูลแล้ว'],['action_other','ดำเนินการอื่นๆ'],['action_not_recorded','ยังไม่บันทึก']];
+  const afc=document.getElementById('actionFilter');
+  actionOptions.forEach(([v,label])=>{const b=document.createElement('span');b.className='pill'+(v==='all'?' on':'');b.textContent=label;b.dataset.v=v;
+    b.onclick=()=>{state.actionFilter=v;document.querySelectorAll('#actionFilter .pill').forEach(p=>p.classList.remove('on'));b.classList.add('on');renderAll();};
+    afc.appendChild(b);
+  });
   // stack legend
   document.getElementById('stackLegend').innerHTML=DATA.districts.map(d=>`<span style="color:${DIST_COLORS[d]||'#94a3b8'}">■ ${d}</span>`).join('');
   buildReportNav();
