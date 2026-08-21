@@ -155,12 +155,33 @@ TEMPLATE = r"""<!DOCTYPE html>
   h1{font-size:21px;margin:0 0 4px;color:var(--txt);letter-spacing:.2px;font-weight:800} .sub{color:var(--mut);font-size:12.5px;margin-bottom:14px}
   .topbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:14px}
   .grid{display:grid;gap:var(--gap)} .kpis{grid-template-columns:repeat(auto-fit,minmax(140px,1fr));margin-bottom:var(--gap)}
-  .kpi{position:relative;background:linear-gradient(160deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:var(--radius);padding:13px 13px;box-shadow:var(--shadow-m);overflow:hidden;transition:transform .2s,box-shadow .2s}
-  .kpi::before{content:'';position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--accent),var(--green));opacity:.0;transition:opacity .2s}
-  .kpi:hover{transform:translateY(-3px);box-shadow:var(--shadow-l)}
+  .kpi{position:relative;background:linear-gradient(160deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:var(--radius);padding:16px 16px;box-shadow:var(--shadow-m);overflow:hidden;transition:transform .2s,box-shadow .2s}
+  .kpi::before{content:'';position:absolute;inset:0 0 auto 0;height:4px;background:var(--kpi-accent,linear-gradient(90deg,var(--accent),var(--green)));opacity:.15;transition:opacity .2s}
+  .kpi:hover{transform:translateY(-4px);box-shadow:var(--shadow-l)}
   .kpi:hover::before{opacity:1}
-  .kpi .v{font-size:23px;font-weight:800;line-height:1.05} .kpi .l{font-size:11.5px;color:var(--mut);margin-top:5px;line-height:1.3}
-  .kpi .v.g{color:var(--green)} .kpi .v.a{color:var(--accent)} .kpi .v.am{color:var(--amber)}
+  .kpi .v{font-size:28px;font-weight:850;line-height:1.05} 
+  .kpi .l{font-size:13px;color:var(--mut);margin-top:6px;line-height:1.4}
+  .kpi .v.g{color:var(--green)} .kpi .v.a{color:var(--accent)} .kpi .v.am{color:var(--amber)} .kpi .v.r{color:var(--red)}
+  .kpi-top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .kico{flex-shrink:0;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:var(--kpi-icon-bg,rgba(37,99,235,.12))}
+  .kico svg{width:18px;height:18px;stroke:var(--kpi-icon-color,var(--accent))}
+  .kmini{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+
+  /* KPI Color Variants */
+  .kpi.masks{--kpi-accent:linear-gradient(90deg,#635bff,#0a72ef);--kpi-icon-bg:rgba(99,91,255,.15);--kpi-icon-color:#635bff}
+  .kpi.delta{--kpi-accent:linear-gradient(90deg,#12b76a,#22c55e);--kpi-icon-bg:rgba(18,183,106,.15);--kpi-icon-color:#12b76a}
+  .kpi.growth{--kpi-accent:linear-gradient(90deg,#2563eb,#635bff);--kpi-icon-bg:rgba(37,99,235,.15);--kpi-icon-color:#2563eb}
+  .kpi.units{--kpi-accent:linear-gradient(90deg,#0a72ef,#12b76a);--kpi-icon-bg:rgba(10,114,239,.15);--kpi-icon-color:#0a72ef}
+  .kpi.ratio{--kpi-accent:linear-gradient(90deg,#f79009,#fbbf24);--kpi-icon-bg:rgba(217,119,6,.15);--kpi-icon-color:#f79009}
+  .kpi.quality{--kpi-accent:linear-gradient(90deg,#635bff,#0a72ef);--kpi-icon-bg:rgba(99,91,255,.15);--kpi-icon-color:#635bff}
+  .kpi.completed{--kpi-accent:linear-gradient(90deg,#12b76a,#22c55e);--kpi-icon-bg:rgba(18,183,106,.15);--kpi-icon-color:#12b76a}
+  .kpi.pending{--kpi-accent:linear-gradient(90deg,#f79009,#fbbf24);--kpi-icon-bg:rgba(217,119,6,.15);--kpi-icon-color:#f79009}
+  .kpi.action{--kpi-accent:linear-gradient(90deg,#dc2626,#f87171);--kpi-icon-bg:rgba(220,38,38,.15);--kpi-icon-color:#dc2626}
+  .kpi.answered{--kpi-accent:linear-gradient(90deg,#12b76a,#22c55e);--kpi-icon-bg:rgba(18,183,106,.15);--kpi-icon-color:#12b76a}
+  .kpi.newcase{--kpi-accent:linear-gradient(90deg,#2563eb,#635bff);--kpi-icon-bg:rgba(37,99,235,.15);--kpi-icon-color:#2563eb}
+  .kpi.completion{--kpi-accent:linear-gradient(90deg,#12b76a,#22c55e);--kpi-icon-bg:rgba(18,183,106,.15);--kpi-icon-color:#12b76a}
+  .kpi.topdistrict{--kpi-accent:linear-gradient(90deg,#9b51e0,#635bff);--kpi-icon-bg:rgba(155,81,224,.15);--kpi-icon-color:#9b51e0}
+  .kpi.alert{--kpi-accent:linear-gradient(90deg,#dc2626,#f87171);--kpi-icon-bg:rgba(220,38,38,.15);--kpi-icon-color:#dc2626}
   .card{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:var(--radius);padding:16px 16px 14px;margin-bottom:var(--gap);box-shadow:var(--shadow-m);animation:fade .45s ease;transition:transform .2s,box-shadow .2s}
   .card:hover{box-shadow:var(--shadow-l)}
   @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
@@ -840,20 +861,20 @@ function renderKPI(){
   
   const box=document.getElementById('kpiBox');
   box.innerHTML=`
-   <div class="kpi"><div class="kpi-top">${KI.masks}<span class="kmini">MASKS</span></div><div class="v a">${last}</div><div class="l">รวม${state.dist!=='all'?' · '+state.dist:''} · ${DATA.labels[lastIdx]}</div></div>
-   <div class="kpi"><div class="kpi-top">${KI.trend}<span class="kmini">DELTA</span></div><div class="v g">${net>=0?'+':''}${net}</div><div class="l">เพิ่มขึ้นสุทธิในช่วงที่เลือก</div></div>
-   <div class="kpi"><div class="kpi-top">${KI.speed}<span class="kmini">GROWTH</span></div><div class="v a">${avg}%</div><div class="l">อัตราเติบโตเฉลี่ยต่อวัน</div></div>
-   <div class="kpi"><div class="kpi-top">${KI.hospital}<span class="kmini">UNITS</span></div><div class="v">${present}</div><div class="l">หน่วยบริการที่มีข้อมูลล่าสุด</div></div>
-   <div class="kpi"><div class="kpi-top">${KI.ratio}<span class="kmini">RATIO</span></div><div class="v am">${ratio}</div><div class="l">Masks ต่อประชาชนโดยรวม</div></div>
-   <div class="kpi"><div class="kpi-top">${KI.shield}<span class="kmini">QUALITY</span></div><div class="v">100%</div><div class="l">ข้อมูลจับคู่สำเร็จทุกหน่วย</div></div>
-   <div class="kpi"><div class="kpi-top">${KI.check}<span class="kmini">ตรวจเสร็จสิ้น</span></div><div class="v g">${completed}</div><div class="l">${present>0?Math.round(completed/present*100):0}% ของหน่วยที่มีข้อมูล</div></div>
-   <div class="kpi"><div class="kpi-top">${KI.clock}<span class="kmini">รอดำเนินการ</span></div><div class="v am">${pendingReview}</div><div class="l">${present>0?Math.round(pendingReview/present*100):0}% รอ/กำลังตรวจ</div></div>
-   <div class="kpi"><div class="kpi-top">${KI.flag}<span class="kmini">ต้องติดตาม</span></div><div class="v a">${actionReq}</div><div class="l">${present>0?Math.round(actionReq/present*100):0}% มีการแก้ไข/ดำเนินการอื่น</div></div>
-   <div class="kpi"><div class="kpi-top">${KI.answer}<span class="kmini">ANSWERED RATE</span></div><div class="v g">${ansRate}%</div><div class="l">ตอบกลับ ${ansTotal}/${last} (${ansRate}%)</div></div>
-   <div class="kpi"><div class="kpi-top">${KI.newcase}<span class="kmini">NEW TODAY</span></div><div class="v a">${newCases}</div><div class="l">หน่วยบริการใหม่ในวันล่าสุด</div></div>
-   <div class="kpi"><div class="kpi-top">${KI.completion}<span class="kmini">COMPLETION %</span></div><div class="v g">${completionRate}%</div><div class="l">${completed}/${present} หน่วยตรวจเสร็จ</div></div>
-   <div class="kpi"><div class="kpi-top">${KI.topdistrict}<span class="kmini">TOP DISTRICT</span></div><div class="v">${topDistVal}</div><div class="l">${topDistName} มียอดสูงสุด</div></div>
-   <div class="kpi"><div class="kpi-top">${KI.alert}<span class="kmini">ALERT</span></div><div class="v a">${alertUnits}</div><div class="l">หน่วยมียอดลด ≥3 เคส</div></div>`;
+   <div class="kpi masks"><div class="kpi-top">${KI.masks}<span class="kmini">MASKS</span></div><div class="v a">${last}</div><div class="l">รวม${state.dist!=='all'?' · '+state.dist:''} · ${DATA.labels[lastIdx]}</div></div>
+   <div class="kpi delta"><div class="kpi-top">${KI.trend}<span class="kmini">DELTA</span></div><div class="v g">${net>=0?'+':''}${net}</div><div class="l">เพิ่มขึ้นสุทธิในช่วงที่เลือก</div></div>
+   <div class="kpi growth"><div class="kpi-top">${KI.speed}<span class="kmini">GROWTH</span></div><div class="v a">${avg}%</div><div class="l">อัตราเติบโตเฉลี่ยต่อวัน</div></div>
+   <div class="kpi units"><div class="kpi-top">${KI.hospital}<span class="kmini">UNITS</span></div><div class="v">${present}</div><div class="l">หน่วยบริการที่มีข้อมูลล่าสุด</div></div>
+   <div class="kpi ratio"><div class="kpi-top">${KI.ratio}<span class="kmini">RATIO</span></div><div class="v am">${ratio}</div><div class="l">Masks ต่อประชาชนโดยรวม</div></div>
+   <div class="kpi quality"><div class="kpi-top">${KI.shield}<span class="kmini">QUALITY</span></div><div class="v">100%</div><div class="l">ข้อมูลจับคู่สำเร็จทุกหน่วย</div></div>
+   <div class="kpi completed"><div class="kpi-top">${KI.check}<span class="kmini">ตรวจเสร็จสิ้น</span></div><div class="v g">${completed}</div><div class="l">${present>0?Math.round(completed/present*100):0}% ของหน่วยที่มีข้อมูล</div></div>
+   <div class="kpi pending"><div class="kpi-top">${KI.clock}<span class="kmini">รอดำเนินการ</span></div><div class="v am">${pendingReview}</div><div class="l">${present>0?Math.round(pendingReview/present*100):0}% รอ/กำลังตรวจ</div></div>
+   <div class="kpi action"><div class="kpi-top">${KI.flag}<span class="kmini">ต้องติดตาม</span></div><div class="v a">${actionReq}</div><div class="l">${present>0?Math.round(actionReq/present*100):0}% มีการแก้ไข/ดำเนินการอื่น</div></div>
+   <div class="kpi answered"><div class="kpi-top">${KI.answer}<span class="kmini">ANSWERED RATE</span></div><div class="v g">${ansRate}%</div><div class="l">ตอบกลับ ${ansTotal}/${last} (${ansRate}%)</div></div>
+   <div class="kpi newcase"><div class="kpi-top">${KI.newcase}<span class="kmini">NEW TODAY</span></div><div class="v a">${newCases}</div><div class="l">หน่วยบริการใหม่ในวันล่าสุด</div></div>
+   <div class="kpi completion"><div class="kpi-top">${KI.completion}<span class="kmini">COMPLETION %</span></div><div class="v g">${completionRate}%</div><div class="l">${completed}/${present} หน่วยตรวจเสร็จ</div></div>
+   <div class="kpi topdistrict"><div class="kpi-top">${KI.topdistrict}<span class="kmini">TOP DISTRICT</span></div><div class="v">${topDistVal}</div><div class="l">${topDistName} มียอดสูงสุด</div></div>
+   <div class="kpi alert"><div class="kpi-top">${KI.alert}<span class="kmini">ALERT</span></div><div class="v a">${alertUnits}</div><div class="l">หน่วยมียอดลด ≥3 เคส</div></div>`;
 }
 function renderProvince(){
   const zone=document.getElementById('provinceZone');if(!PROVINCE){zone.hidden=true;return;}
