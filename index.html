@@ -583,17 +583,27 @@ function barChart(el,labels,vals){
   s+='</svg>';el.innerHTML=s;attachTips(el);
 }
 function hbar(el,items){
-  const w=560,row=30,lw=190,pad_t=6;const maxv=Math.max(1,...items.map(i=>i.val));
+  const w=560,row=36,lw=190,pad_t=6;const maxv=Math.max(1,...items.map(i=>i.val));
   const h=row*items.length+pad_t*2;let s=`<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="xMinYMin meet" style="display:block;filter:drop-shadow(0 3px 8px rgba(15,23,42,.08))">${SVGDEFS}`;
+  // horizontal grid lines for each row
+  items.forEach((_,i)=>{
+    const yy=pad_t+i*row+row/2;
+    s+=`<line x1="${lw}" y1="${yy}" x2="${w-18}" y2="${yy}" stroke="${css('--line')}" opacity="0.08"/>`;
+  });
   let y=pad_t;
   items.forEach(it=>{const bw=(w-lw-66)*(it.val/maxv);
+    // unit name
     s+=`<text x="0" y="${y+row/2}" font-size="11.5" fill="var(--txt)" dominant-baseline="middle">${it.name}</text>`;
-    s+=`<rect x="${lw}" y="${y+5}" width="${w-lw-66}" height="${row-12}" rx="7" fill="${css('--line')}" opacity="0.5"/>`;
+    // background track
+    s+=`<rect x="${lw}" y="${y+5}" width="${w-lw-66}" height="${row-12}" rx="7" fill="${css('--line')}" opacity="0.2"/>`;
+    // value bar
     s+=`<rect class="bar" data-tip="${it.name}: ${it.val}${it.extra||''}" x="${lw}" y="${y+5}" width="${Math.max(bw,3)}" height="${row-12}" rx="7" fill="${it.color}"/>`;
-    s+=`<text x="${lw+Math.max(bw,3)+8}" y="${y+row/2}" font-size="11.5" fill="var(--txt)" dominant-baseline="middle" font-weight="700">${it.val}${it.suffix||''} ${it.extra||''}</text>`;
+    // value label: place inside bar if enough space, else right-aligned outside
+    const labelX = Math.max(bw,3) >= 24 ? lw+Math.max(bw,3)-4 : lw+Math.max(bw,3)+8;
+    const labelAlign = Math.max(bw,3) >= 24 ? "end" : "start";
+    s+=`<text x="${labelX}" y="${y+row/2}" font-size="11" fill="var(--txt)" dominant-baseline="middle" text-anchor="${labelAlign}" font-weight="600">${it.val}${it.suffix||''} ${it.extra||''}</text>`;
     y+=row;});
-  s+='</svg>';el.innerHTML=s;attachTips(el);
-}
+  s+='</svg>';el.innerHTML=s;attachTips(el);}
 function stacked(el,labels,distData){
   const w=560,h=240,pad_l=42,pad_b=30,pad_t=18;const pw=w-pad_l-18,ph=h-pad_b-pad_t;
   const maxv=Math.max(1,...labels.map(l=>DATA.districts.reduce((s,d)=>s+distData[l][d],0)));
@@ -773,13 +783,13 @@ function renderMobileCategoryKey(el,items){
   el.insertAdjacentElement('afterend',list);
 }
 function hbar(el,items){
-  const p=viewportProfile(),maxChars=p.tablet?32:52,labels=items.map((i,n)=>p.phone?String(n+1):wrapChartLabel(i.name,maxChars));
-  const maxLines=Math.max(1,...labels.map(l=>Array.isArray(l)?l.length:1)),row=p.phone?29+maxLines*9:(p.tablet?27+maxLines*8:24+maxLines*7),height=Math.max(p.phone?265:230,Math.min(760,items.length*row+50));
-  const palette=['#6246ea','#246bfd','#078a52','#f0a202','#e84d5b','#9a62db'];
-  const vals=items.map(i=>i.val),colors=items.map((i,n)=>i.color||palette[n%palette.length]);
+  const p=viewportProfile(),maxChars=p.tablet?28:48,labels=items.map((i,n)=>p.phone?String(n+1):wrapChartLabel(i.name,maxChars)));
+  const maxLines=Math.max(1,...labels.map(l=>Array.isArray(l)?l.length:1)),row=p.phone?34+maxLines*10:(p.tablet?30+maxLines*9:26+maxLines*8),height=Math.max(p.phone?280:250,Math.min(800,items.length*row+60)));
+  const palette=['#6246ea','#246bfd','#078a52','#f0a202','#e84d5b','#9a62db']);
+  const vals=items.map(i=>i.val),colors=items.map((i,n)=>i.color||palette[n%palette.length]));
   // Support dashed border for items with hasCorrection (momentum chart)
-  const borderDash=items.map(i=>i.hasCorrection?[6,4]:[]);
-  mountChart(el,{type:'bar',data:{labels,datasets:[{label:'ค่า',data:vals,backgroundColor:colors,borderColor:colors,borderWidth:1,borderDash:borderDash,borderSkipped:false,borderRadius:p.phone?6:8,barThickness:p.phone?13:16}]},options:{indexAxis:'y',layout:{padding:{top:6,right:p.phone?45:72,left:0,bottom:2}},scales:chartScales(true),plugins:{datalabels:{display:true,color:'#171720',anchor:'end',align:'right',clamp:true,clip:false,font:{size:p.phone?9:10,weight:'700'},formatter:(v,c)=>`${v}${items[c.dataIndex].extra?' '+items[c.dataIndex].extra:''}`},tooltip:{...chartTooltip(),callbacks:{title:c=>items[c[0].dataIndex].name,label:c=>`${c.raw} ${items[c.dataIndex].tooltipExtra||items[c.dataIndex].extra||''}`}}}}},height);
+  const borderDash=items.map(i=>i.hasCorrection?[6,4]:[]));
+  mountChart(el,{type:'bar',data:{labels,datasets:[{label:'ค่า',data:vals,backgroundColor:colors,borderColor:colors,borderWidth:1,borderDash:borderDash,borderSkipped:false,borderRadius:p.phone?8:10,barThickness:p.phone?16:20}]},options:{indexAxis:'y',layout:{padding:{top:8,right:p.phone?50:80,left:0,bottom:4}},scales:chartScales(true),plugins:{datalabels:{display:true,color:'#171720',anchor:'end',align:'right',clamp:true,clip:false,font:{size:p.phone?10:11,weight:'700'},formatter:(v,c)=>`${v}${items[c.dataIndex].extra?' '+items[c.dataIndex].extra:''}`},tooltip:{...chartTooltip(),callbacks:{title:c=>items[c[0].dataIndex].name,label:c=>`${c.raw} ${items[c.dataIndex].tooltipExtra||items[c.dataIndex].extra||''}`}}}}},height);
   renderMobileCategoryKey(el,items);
 }
 function hbarStacked(el,items,stackKeys,stackColors,stackLabels){
