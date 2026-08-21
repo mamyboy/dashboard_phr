@@ -121,22 +121,32 @@
   @media(prefers-reduced-motion:reduce){.live-dot{animation:none!important}}
   .filterbar{display:grid;grid-template-columns:1fr;gap:8px;padding:10px 12px;margin-bottom:14px;background:rgba(255,255,255,.88);border-radius:12px;box-shadow:var(--shadow-s)}
   .filterbar .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0}
-  .filterbar .controls:first-child{grid-column:1}
-  .filterbar .controls:nth-child(2){grid-column:1}
-  .filterbar .controls:nth-child(3){grid-column:1}
-  .filterbar .controls:nth-child(4){grid-column:1}
+  .filterbar .filter-row-main{gap:10px}
+  .filterbar .filter-row-main .search{flex:1 1 200px;min-width:0}
+  .filterbar .filter-row-main .btn-reset{flex:0 0 auto;white-space:nowrap}
+  .filterbar .filter-row-primary{gap:8px}
+  .filterbar .filter-row-secondary{gap:8px}
+  .filterbar .filter-summary{display:flex;flex-wrap:wrap;gap:4px;flex:1 1 auto;min-width:0}
+  .filterbar .filter-summary .badge{font-size:9px;padding:2px 6px}
+  .filterbar .filter-pills-expanded{display:flex;flex-wrap:wrap;gap:6px;width:100%;margin-top:4px;padding-top:4px;border-top:1px dashed var(--line)}
+  .filterbar .filter-pills-expanded .pill{font-size:10px;padding:5px 10px}
   .filterbar .light-badge{justify-self:center;margin-top:4px}
+  .btn-reset{background:var(--card);border:1px solid var(--line);color:var(--mut);padding:6px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s}
+  .btn-reset:hover{background:var(--red);color:#fff;border-color:var(--red)}
   @media(min-width:640px){
     .filterbar{grid-template-columns:repeat(2,1fr);align-items:center}
-    .filterbar .controls:first-child{grid-column:1}
-    .filterbar .controls:nth-child(2){grid-column:2}
-    .filterbar .controls:nth-child(3){grid-column:1}
-    .filterbar .controls:nth-child(4){grid-column:2}
+    .filterbar .filter-row-main{grid-column:1 / -1}
+    .filterbar .filter-row-primary:nth-of-type(1){grid-column:1}
+    .filterbar .filter-row-primary:nth-of-type(2){grid-column:2}
+    .filterbar .filter-row-secondary:nth-of-type(1){grid-column:1}
+    .filterbar .filter-row-secondary:nth-of-type(2){grid-column:2}
     .filterbar .light-badge{grid-column:1 / -1;justify-self:center}
   }
   @media(min-width:1024px){
-    .filterbar{grid-template-columns:repeat(4,auto) 1fr;align-items:center}
-    .filterbar .controls{grid-column:auto}
+    .filterbar{grid-template-columns:repeat(2,1fr) repeat(2,auto) 1fr;align-items:center}
+    .filterbar .filter-row-main{grid-column:1 / -1}
+    .filterbar .filter-row-primary{grid-column:auto}
+    .filterbar .filter-row-secondary{grid-column:auto}
     .filterbar .light-badge{grid-column:5;justify-self:end}
   }
   @media(max-width:900px){
@@ -371,14 +381,35 @@
 </header>
 
 <div class="filterbar">
-  <div class="controls">
+  <!-- Row 1: Search + Reset -->
+  <div class="controls filter-row-main">
+    <span class="filter-label">🔍 ค้นหา</span>
+    <input class="search" id="unitSearch" name="unitSearch" autocomplete="off" placeholder="ชื่อหน่วย/อำเภอ...">
+    <button class="btn btn-reset" id="resetFilters" title="ล้างตัวกรองทั้งหมด">🧹 ล้าง</button>
+  </div>
+
+  <!-- Row 2: Primary filters (Area + Date range) -->
+  <div class="controls filter-row-primary">
     <span class="filter-label">📍 พื้นที่</span>
     <span id="distPills"></span>
   </div>
-  <div class="controls">
+  <div class="controls filter-row-primary">
     <span class="filter-label">📅 ช่วงวัน</span>
     <span id="dayChips"></span>
   </div>
+
+  <!-- Row 3: Secondary filters (Status + Action) - expandable summaries -->
+  <div class="controls filter-row-secondary" id="statusFilterRow">
+    <span class="filter-label">🏷️ สถานะ</span>
+    <span id="statusFilterSummary" class="filter-summary"></span>
+    <span id="statusFilterPills" class="filter-pills-expanded" hidden></span>
+  </div>
+  <div class="controls filter-row-secondary" id="actionFilterRow">
+    <span class="filter-label">⚡ การดำเนินการ</span>
+    <span id="actionFilterSummary" class="filter-summary"></span>
+    <span id="actionFilterPills" class="filter-pills-expanded" hidden></span>
+  </div>
+
   <span class="light-badge">✨ Health Bento</span>
 </div>
 
@@ -1260,9 +1291,45 @@ function actionLabel(key){
   return map[key]||key;
 }
 
+// Update filter summaries with counts
+function updateFilterSummaries(){
+  const dayIdx = activeIdx().slice(-1)[0];
+  const units = selUnits();
+  
+  // Status counts
+  const statusOptions = [
+    ['status_pending','รอตรวจสอบ','status_pending'],
+    ['status_in_progress','อยู่ระหว่างตรวจสอบ','status_in_progress'],
+    ['status_completed','ตรวจเสร็จสิ้น','status_completed'],
+    ['status_no_error_found','ไม่พบข้อผิดพลาด','status_no_error_found'],
+    ['status_not_recorded','ยังไม่บันทึก','status_not_recorded']
+  ];
+  const statusSummary = statusOptions.map(([v,label,cls])=>{
+    const count = units.filter(u => getPrimaryStatusAt(u, dayIdx) === v).length;
+    if(count===0) return '';
+    return `<span class="badge badge-${cls}" title="${label}">${label} ${count}</span>`;
+  }).filter(Boolean).join(' ');
+  document.getElementById('statusFilterSummary').innerHTML = statusSummary || '<span class="badge" style="background:var(--mut);color:#fff">ทั้งหมด</span>';
+  
+  // Action counts
+  const actionOptions = [
+    ['action_none_yet','ยังไม่ดำเนินการ','action_none_yet'],
+    ['action_data_corrected','แก้ไขข้อมูลแล้ว','action_data_corrected'],
+    ['action_other','ดำเนินการอื่นๆ','action_other'],
+    ['action_not_recorded','ยังไม่บันทึก','action_not_recorded']
+  ];
+  const actionSummary = actionOptions.map(([v,label,cls])=>{
+    const count = units.filter(u => getPrimaryActionAt(u, dayIdx) === v).length;
+    if(count===0) return '';
+    return `<span class="badge badge-${cls}" title="${label}">${label} ${count}</span>`;
+  }).filter(Boolean).join(' ');
+  document.getElementById('actionFilterSummary').innerHTML = actionSummary || '<span class="badge" style="background:var(--mut);color:#fff">ทั้งหมด</span>';
+}
+
 // ---- controls ----
 function buildControls(){
-  const dp=document.getElementById('distPills');  ['all',...DATA.districts].forEach(d=>{
+  const dp=document.getElementById('distPills');  
+  ['all',...DATA.districts].forEach(d=>{
     const b=document.createElement('span');b.className='pill'+(d==='all'?' on':'');b.role='button';b.tabIndex=0;b.setAttribute('aria-pressed',d==='all');
     b.textContent=d==='all'?'ทั้งหมด':d;b.dataset.d=d;
     const activate=()=>{state.dist=d;document.querySelectorAll('#distPills .pill').forEach(p=>{p.classList.remove('on');p.setAttribute('aria-pressed','false');});b.classList.add('on');b.setAttribute('aria-pressed','true');renderAll();};
@@ -1277,29 +1344,59 @@ function buildControls(){
   });
   document.getElementById('unitSearch').oninput=e=>{state.search=e.target.value;renderUnitTable();};
   document.querySelectorAll('[data-response-mode]').forEach(button=>{button.onclick=()=>{state.responseMode=button.dataset.responseMode;renderUnitResponse();};});
-  // Status filter
-  const sf=document.createElement('div');sf.className='controls';sf.innerHTML='<span class="filter-label">🏷️ สถานะ</span><span id="statusFilter"></span>';
-  document.querySelector('.filterbar').appendChild(sf);
+  
+  // Reset button
+  document.getElementById('resetFilters').onclick=()=>{
+    state.dist='all'; 
+    state.days=DATA.labels.map((_,i)=>i);
+    state.statusFilter='all';
+    state.actionFilter='all';
+    state.search='';
+    document.getElementById('unitSearch').value='';
+    document.querySelectorAll('#distPills .pill').forEach(p=>{p.classList.remove('on');p.setAttribute('aria-pressed','false');});
+    document.querySelectorAll('#distPills .pill[data-d="all"]').forEach(p=>{p.classList.add('on');p.setAttribute('aria-pressed','true');});
+    document.querySelectorAll('#dayChips .chip').forEach(p=>{p.classList.add('on');p.setAttribute('aria-pressed','true');});
+    document.querySelectorAll('#statusFilterPills .pill, #actionFilterPills .pill').forEach(p=>{p.classList.remove('on');p.setAttribute('aria-pressed','false');});
+    document.querySelectorAll('#statusFilterPills .pill[data-v="all"], #actionFilterPills .pill[data-v="all"]').forEach(p=>{p.classList.add('on');p.setAttribute('aria-pressed','true');});
+    renderAll();
+  };
+  
+  // Status filter pills (expanded)
   const statusOptions=[['all','ทั้งหมด'],['status_pending','รอตรวจสอบ'],['status_in_progress','อยู่ระหว่างตรวจสอบ'],['status_completed','ตรวจเสร็จสิ้น'],['status_no_error_found','ไม่พบข้อผิดพลาด'],['status_not_recorded','ยังไม่บันทึก']];
-  const sfc=document.getElementById('statusFilter');
+  const sfc=document.getElementById('statusFilterPills');
   statusOptions.forEach(([v,label])=>{const b=document.createElement('span');b.className='pill'+(v==='all'?' on':'');b.role='button';b.tabIndex=0;b.setAttribute('aria-pressed',v==='all');b.textContent=label;b.dataset.v=v;
-    b.onclick=()=>{state.statusFilter=v;document.querySelectorAll('#statusFilter .pill').forEach(p=>{p.classList.remove('on');p.setAttribute('aria-pressed','false');});b.classList.add('on');b.setAttribute('aria-pressed','true');renderAll();};
-    b.onkeydown=e=>{if(e.key==='Enter'||e.key===' ') {e.preventDefault();state.statusFilter=v;document.querySelectorAll('#statusFilter .pill').forEach(p=>{p.classList.remove('on');p.setAttribute('aria-pressed','false');});b.classList.add('on');b.setAttribute('aria-pressed','true');renderAll();}};
+    b.onclick=()=>{state.statusFilter=v;document.querySelectorAll('#statusFilterPills .pill').forEach(p=>{p.classList.remove('on');p.setAttribute('aria-pressed','false');});b.classList.add('on');b.setAttribute('aria-pressed','true');renderAll();updateFilterSummaries();};
+    b.onkeydown=e=>{if(e.key==='Enter'||e.key===' ') {e.preventDefault();state.statusFilter=v;document.querySelectorAll('#statusFilterPills .pill').forEach(p=>{p.classList.remove('on');p.setAttribute('aria-pressed','false');});b.classList.add('on');b.setAttribute('aria-pressed','true');renderAll();updateFilterSummaries();}};
     sfc.appendChild(b);
   });
-  // Action filter
-  const af=document.createElement('div');af.className='controls';af.innerHTML='<span class="filter-label">⚡ การดำเนินการ</span><span id="actionFilter"></span>';
-  document.querySelector('.filterbar').appendChild(af);
+  
+  // Action filter pills (expanded)
   const actionOptions=[['all','ทั้งหมด'],['action_none_yet','ยังไม่ดำเนินการ'],['action_data_corrected','แก้ไขข้อมูลแล้ว'],['action_other','ดำเนินการอื่นๆ'],['action_not_recorded','ยังไม่บันทึก']];
-  const afc=document.getElementById('actionFilter');
+  const afc=document.getElementById('actionFilterPills');
   actionOptions.forEach(([v,label])=>{const b=document.createElement('span');b.className='pill'+(v==='all'?' on':'');b.role='button';b.tabIndex=0;b.setAttribute('aria-pressed',v==='all');b.textContent=label;b.dataset.v=v;
-    b.onclick=()=>{state.actionFilter=v;document.querySelectorAll('#actionFilter .pill').forEach(p=>{p.classList.remove('on');p.setAttribute('aria-pressed','false');});b.classList.add('on');b.setAttribute('aria-pressed','true');renderAll();};
-    b.onkeydown=e=>{if(e.key==='Enter'||e.key===' ') {e.preventDefault();state.actionFilter=v;document.querySelectorAll('#actionFilter .pill').forEach(p=>{p.classList.remove('on');p.setAttribute('aria-pressed','false');});b.classList.add('on');b.setAttribute('aria-pressed','true');renderAll();}};
+    b.onclick=()=>{state.actionFilter=v;document.querySelectorAll('#actionFilterPills .pill').forEach(p=>{p.classList.remove('on');p.setAttribute('aria-pressed','false');});b.classList.add('on');b.setAttribute('aria-pressed','true');renderAll();updateFilterSummaries();};
+    b.onkeydown=e=>{if(e.key==='Enter'||e.key===' ') {e.preventDefault();state.actionFilter=v;document.querySelectorAll('#actionFilterPills .pill').forEach(p=>{p.classList.remove('on');p.setAttribute('aria-pressed','false');});b.classList.add('on');b.setAttribute('aria-pressed','true');renderAll();updateFilterSummaries();}};
     afc.appendChild(b);
   });
+  
+  // Toggle expanded pills on summary click
+  document.getElementById('statusFilterRow').onclick=e=>{
+    if(e.target.closest('.filter-summary')){
+      const expanded=document.getElementById('statusFilterPills');
+      expanded.hidden=!expanded.hidden;
+    }
+  };
+  document.getElementById('actionFilterRow').onclick=e=>{
+    if(e.target.closest('.filter-summary')){
+      const expanded=document.getElementById('actionFilterPills');
+      expanded.hidden=!expanded.hidden;
+    }
+  };
+  
   // stack legend
   document.getElementById('stackLegend').innerHTML=DATA.districts.map(d=>`<span style="color:${DIST_COLORS[d]||'#94a3b8'}">■ ${d}</span>`).join('');
   buildReportNav();
+  updateFilterSummaries();
 }
 function renderAll(){renderKPI();renderProvince();renderTrend();renderNet();renderStack();renderPareto();renderMom();renderRatio();renderAns();renderUnitResponse();renderICD();renderUnitTable();renderReport();}
 const responsiveController=new ResponsiveChartController({charts:CHARTS,rerender:renderAll});
