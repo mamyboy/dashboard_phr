@@ -1206,7 +1206,7 @@ function buildControls(){
       renderAll();};
     dc.appendChild(b);
   });
-  document.getElementById('unitSearch').oninput=e=>{state.search=e.target.value;renderUnitTable();};
+  document.getElementById('unitSearch').oninput=e=>{state.search=e.target.value;renderAll();};
   document.querySelectorAll('[data-response-mode]').forEach(button=>{button.onclick=()=>{state.responseMode=button.dataset.responseMode;renderUnitResponse();};});
   // Status filter
   const sf=document.createElement('div');sf.className='controls';sf.innerHTML='<span class="filter-label">🏷️ สถานะ</span><span id="statusFilter"></span>';
