@@ -875,9 +875,10 @@ function hbarStacked(el,items,stackKeys,stackColors,stackLabels){
             }
           }
         }
-      }, height;
+              }
+            };
    
-      if (CHARTS[el.id]) { CHARTS[el.id].destroy(); delete CHARTS[el.id]; }
+            if (CHARTS[el.id]) { CHARTS[el.id].destroy(); delete CHARTS[el.id]; }
       const key = document.querySelector(`[data-chart-key="${el.id}"]`); if (key) key.remove();
       el.className = 'chartbox'; el.style.height = 'auto';
       mountChart(el, chartOpts, height);
