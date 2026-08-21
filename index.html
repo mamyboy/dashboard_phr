@@ -741,6 +741,24 @@ function hbar(el,items){
   mountChart(el,{type:'bar',data:{labels,datasets:[{label:'ค่า',data:vals,backgroundColor:colors,borderRadius:p.phone?6:8,borderSkipped:false,barThickness:p.phone?13:16}]},options:{indexAxis:'y',layout:{padding:{top:6,right:p.phone?45:72,left:0,bottom:2}},scales:chartScales(true),plugins:{datalabels:{display:true,color:'#171720',anchor:'end',align:'right',clamp:true,clip:false,font:{size:p.phone?9:10,weight:'700'},formatter:(v,c)=>`${v}${items[c.dataIndex].extra?' '+items[c.dataIndex].extra:''}`},tooltip:{...chartTooltip(),callbacks:{title:c=>items[c[0].dataIndex].name,label:c=>`${c.raw} ${items[c.dataIndex].tooltipExtra||items[c.dataIndex].extra||''}`}}}}},height);
   renderMobileCategoryKey(el,items);
 }
+function hbarStacked(el,items,stackKeys,stackColors,stackLabels){
+  // items: [{name, stacks: {key1: val1, key2: val2, ...}, extra, tooltipExtra}, ...]
+  // stackKeys: array of keys in order (bottom to top)
+  // stackColors: object key->color
+  // stackLabels: object key->label for legend
+  const p=viewportProfile(),maxChars=p.tablet?32:52,labels=items.map((i,n)=>p.phone?String(n+1):wrapChartLabel(i.name,maxChars));
+  const maxLines=Math.max(1,...labels.map(l=>Array.isArray(l)?l.length:1)),row=p.phone?29+maxLines*9:(p.tablet?27+maxLines*8:24+maxLines*7),height=Math.max(p.phone?265:230,Math.min(760,items.length*row+50));
+  const datasets=stackKeys.map(key=>({
+    label:stackLabels[key]||key,
+    data:items.map(item=>item.stacks[key]||0),
+    backgroundColor:stackColors[key]||'#999',
+    borderRadius:p.phone?6:8,
+    borderSkipped:false,
+    barThickness:p.phone?13:16
+  }));
+  mountChart(el,{type:'bar',data:{labels,datasets},options:{indexAxis:'y',layout:{padding:{top:6,right:p.phone?45:72,left:0,bottom:2}},scales:{...chartScales(true),x:{...chartScales(true).x,stacked:true},y:{...chartScales(true).y,stacked:true}},plugins:{legend:{display:!p.phone,position:'bottom',labels:{usePointStyle:true,pointStyle:'circle',boxWidth:7,padding:p.phone?8:11,font:{size:p.phone?8:9}}},datalabels:{display:true,color:'#171720',anchor:'end',align:'right',clamp:true,clip:false,font:{size:p.phone?9:10,weight:'700'},formatter:(v,c)=>{const item=items[c.dataIndex];const total=Object.values(item.stacks||{}).reduce((a,b)=>a+b,0);return total?`${v} (${Math.round(v/total*100)}%)`:''}},tooltip:{...chartTooltip(),callbacks:{title:c=>items[c[0].dataIndex].name,label:c=>`${c.dataset.label}: ${c.raw} (${c.raw>0?Math.round(c.raw/items[c[0].dataIndex].stacks[c.dataset.label]*100):0}%)`}}}}},height);
+  renderMobileCategoryKey(el,items);
+}
 function stacked(el,labels,distData){
   const p=viewportProfile(),displayLabels=labels.map(compactDate);
   const datasets=DATA.districts.map(d=>({label:d,data:labels.map(l=>distData[l][d]),backgroundColor:DIST_COLORS[d]||'#9ca3af',borderColor:'#fff',borderWidth:1,borderRadius:4,borderSkipped:false}));
@@ -795,13 +813,19 @@ function renderProvince(){
   document.getElementById('provinceTitle').textContent=`${p.province_name} · รอบ ${PROVINCE.snapshot_label}`;
   document.getElementById('provinceSubtitle').textContent=PROVINCE.detail_aligned?`มีข้อมูลจังหวัดและรายละเอียด ${p.hospitals} หน่วยบริการถึงวันที่ ${PROVINCE.detail_latest_label} รอบ ${PROVINCE.detail_latest_time}`:'ภาพรวมระดับจังหวัด ใช้เสริมข้อมูลรายละเอียดหน่วยบริการของวันก่อนหน้า';
   document.getElementById('provinceStamp').textContent=`อันดับ ${p.rank}/${p.national_count} ประเทศ`;
+  // Calculate completion rate from facility data
+  const lastIdx=DATA.labels.length-1;
+  const unitsWithData=DATA.units.filter(u=>u.masks[lastIdx]>0);
+  const completedUnits=unitsWithData.filter(u=>u.status_completed>0).length;
+  const completionRate=unitsWithData.length?Math.round(completedUnits/unitsWithData.length*10000)/100:0;
   document.getElementById('provinceKpis').innerHTML=`
     <div class="prov-kpi"><span class="lab">CASES · เคส</span><b class="val">${fmt(p.masks)}</b><small>${signed(p.delta_masks)} เทียบ ${PROVINCE.baseline_label}</small></div>
     <div class="prov-kpi"><span class="lab">CITIZENS · คน</span><b class="val">${fmt(p.citizens)}</b><small>${signed(p.delta_citizens)} เทียบ ${PROVINCE.baseline_label}</small></div>
     <div class="prov-kpi"><span class="lab">ANSWERED · ตอบกลับ</span><b class="val">${fmt(p.answered)}</b><small>${signed(p.delta_answered)} เทียบ ${PROVINCE.baseline_label}</small></div>
     <div class="prov-kpi"><span class="lab">RESPONSE RATE</span><b class="val">${p.answer_rate.toFixed(2)}%</b><small>ตอบกลับ ÷ เคส</small></div>
     <div class="prov-kpi"><span class="lab">MATCH QUALITY</span><b class="val">${Number(p.match_rate_pct).toFixed(1)}%</b><small>${fmt(p.matched)} matched · ${fmt(p.unmatched)} unmatched</small></div>
-    <div class="prov-kpi"><span class="lab">REGION 12</span><b class="val">${p.region_rank}/${p.region_count}</b><small>${PROVINCE.region.province_share_pct.toFixed(2)}% ของเคสเขต</small></div>`;
+    <div class="prov-kpi"><span class="lab">REGION 12</span><b class="val">${p.region_rank}/${p.region_count}</b><small>${PROVINCE.region.province_share_pct.toFixed(2)}% ของเคสเขต</small></div>
+    <div class="prov-kpi"><span class="lab">COMPLETION RATE</span><b class="val">${completionRate.toFixed(2)}%</b><small>หน่วยที่ตรวจเสร็จสิ้น / ทั้งหมด</small></div>`;
   const gap=PROVINCE.region.answer_rate-p.answer_rate,nationalGap=PROVINCE.national.answer_rate-p.answer_rate;
   const last=DATA.labels.length-1,prev=Math.max(0,last-1),changes=DATA.units.map(u=>({name:u.name,delta:u.masks[last]-u.masks[prev]})).filter(x=>x.delta!==0).sort((a,b)=>Math.abs(b.delta)-Math.abs(a.delta));
   const changeText=changes.length?` หน่วยที่เปลี่ยนแปลงสูงสุดคือ ${changes[0].name} ${signed(changes[0].delta)} เคส`:' ไม่พบหน่วยที่มียอดเคสเปลี่ยนแปลง';
@@ -901,12 +925,51 @@ function renderUnitResponse(){
   const valueFor=m=>state.responseMode==='answered'?m.answered:state.responseMode==='delta'?Math.max(0,m.delta||0):m.pending;
   const ranked=metrics.filter(m=>valueFor(m)>0).sort((a,b)=>valueFor(b)-valueFor(a)||(b.rate||0)-(a.rate||0)||a.unit.name.localeCompare(b.unit.name,'th'));
   if(!ranked.length){const empty=state.responseMode==='delta'?'ไม่มีหน่วยบริการที่มีจำนวนตอบกลับเพิ่มขึ้นในรอบล่าสุด':state.responseMode==='pending'?'ทุกหน่วยตอบกลับครบแล้ว':'ยังไม่มีหน่วยบริการที่ตอบกลับ';clearUnitResponseChart(empty);document.getElementById('unitResponseInsight').textContent=empty;return;}
-  const items=ranked.slice(0,8).map(m=>{const rate=m.rate===null?'—':Math.round(m.rate*10)/10+'%';
-    const extra=`(${m.answered}/${m.masks})`,keyDetail=`ตอบ ${m.answered}/${m.masks} · ${rate}`;
-    const tooltipExtra=state.responseMode==='answered'?`ตอบ ${m.answered}/${m.masks} · ${rate}`:state.responseMode==='delta'?`ตอบเพิ่ม ${Math.max(0,m.delta||0)} · รวม ${m.answered}/${m.masks} · ${rate}`:`คงค้าง ${m.pending} · ตอบ ${m.answered}/${m.masks} · ${rate}`;
-    const color=state.responseMode==='pending'?'#e84d5b':m.rate===100?'#078a52':m.rate&&m.rate>0?'#d98b00':'#e84d5b';
-    return {name:m.unit.name,val:valueFor(m),extra,keyDetail:keyDetail,tooltipExtra:tooltipExtra,color};});
-  hbar(document.getElementById('unitResponseChart'),items);
+
+  // Build stacked items for answered mode
+  if(state.responseMode==='answered'){
+    const items=ranked.slice(0,8).map(m=>{
+      const unit=m.unit;
+      const completed=unit.status_completed||0;
+      const inProgress=unit.status_in_progress||0;
+      const pendingStatus=unit.status_pending||0;
+      const otherStatus=(unit.status_no_error_found||0)+(unit.status_not_recorded||0);
+      const total=completed+inProgress+pendingStatus+otherStatus;
+      return {
+        name:m.unit.name,
+        stacks:{
+          status_completed:completed,
+          status_in_progress:inProgress,
+          status_pending:pendingStatus,
+          status_other:otherStatus
+        },
+        extra:`(${m.answered}/${m.masks})`,
+        keyDetail:`ตอบ ${m.answered}/${m.masks}`,
+        tooltipExtra:`ตอบ ${m.answered}/${m.masks}`
+      };
+    });
+    const stackKeys=['status_completed','status_in_progress','status_pending','status_other'];
+    const stackColors={
+      status_completed:'#078a52',
+      status_in_progress:'#246bfd',
+      status_pending:'#f0a202',
+      status_other:'#9a62db'
+    };
+    const stackLabels={
+      status_completed:'ตรวจเสร็จสิ้น',
+      status_in_progress:'อยู่ระหว่างตรวจสอบ',
+      status_pending:'รอตรวจสอบ',
+      status_other:'อื่นๆ'
+    };
+    hbarStacked(document.getElementById('unitResponseChart'),items,stackKeys,stackColors,stackLabels);
+  }else{
+    const items=ranked.slice(0,8).map(m=>{const rate=m.rate===null?'—':Math.round(m.rate*10)/10+'%';
+      const extra=`(${m.answered}/${m.masks})`,keyDetail=`ตอบ ${m.answered}/${m.masks} · ${rate}`;
+      const tooltipExtra=state.responseMode==='answered'?`ตอบ ${m.answered}/${m.masks} · ${rate}`:state.responseMode==='delta'?`ตอบเพิ่ม ${Math.max(0,m.delta||0)} · รวม ${m.answered}/${m.masks} · ${rate}`:`คงค้าง ${m.pending} · ตอบ ${m.answered}/${m.masks} · ${rate}`;
+      const color=state.responseMode==='pending'?'#e84d5b':m.rate===100?'#078a52':m.rate&&m.rate>0?'#d98b00':'#e84d5b';
+      return {name:m.unit.name,val:valueFor(m),extra,keyDetail:keyDetail,tooltipExtra:tooltipExtra,color};});
+    hbar(document.getElementById('unitResponseChart'),items);
+  }
   const lead=ranked[0],leadValue=valueFor(lead),modeLabel=state.responseMode==='answered'?'ตอบกลับสูงสุด':state.responseMode==='delta'?'ตอบเพิ่มสูงสุด':'คงค้างสูงสุด';
   const notes=[`${modeLabel}: ${lead.unit.name} ${leadValue} เคส`,`ตอบแล้ว ${answered}/${active.reduce((s,m)=>s+m.masks,0)} เคส · คงค้าง ${pending} เคส`];
   if(revisions)notes.push(`พบ ${revisions} หน่วยที่ยอดตอบกลับลดลงจากการปรับข้อมูล`);if(anomalies)notes.push(`⚠️ พบ ${anomalies} หน่วยที่ answered มากกว่า masks`);
