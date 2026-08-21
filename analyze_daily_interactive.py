@@ -71,19 +71,27 @@ for code in all_codes:
     cit = [d["data"].get(code, {}).get("cit", 0) for d in days]
     enc = [d["data"].get(code, {}).get("enc", 0) or 0 for d in days]
     ans = [d["data"].get(code, {}).get("ans", 0) or 0 for d in days]
-    # status/action fields (latest snapshot)
-    latest_data = days[-1]["data"].get(code, {}) if days else {}
+    # status/action fields per day (array like masks/cit/enc/ans)
+    status_pending = [d["data"].get(code, {}).get("status_pending", 0) or 0 for d in days]
+    status_in_progress = [d["data"].get(code, {}).get("status_in_progress", 0) or 0 for d in days]
+    status_completed = [d["data"].get(code, {}).get("status_completed", 0) or 0 for d in days]
+    status_no_error_found = [d["data"].get(code, {}).get("status_no_error_found", 0) or 0 for d in days]
+    status_not_recorded = [d["data"].get(code, {}).get("status_not_recorded", 0) or 0 for d in days]
+    action_none_yet = [d["data"].get(code, {}).get("action_none_yet", 0) or 0 for d in days]
+    action_data_corrected = [d["data"].get(code, {}).get("action_data_corrected", 0) or 0 for d in days]
+    action_other = [d["data"].get(code, {}).get("action_other", 0) or 0 for d in days]
+    action_not_recorded = [d["data"].get(code, {}).get("action_not_recorded", 0) or 0 for d in days]
     unit_recs.append(dict(code=code, name=canon[code]["name"], dist=canon[code]["dist"],
                           masks=masks, cit=cit, enc=enc, ans=ans, last=canon[code]["masks"],
-                          status_pending=latest_data.get("status_pending", 0),
-                          status_in_progress=latest_data.get("status_in_progress", 0),
-                          status_completed=latest_data.get("status_completed", 0),
-                          status_no_error_found=latest_data.get("status_no_error_found", 0),
-                          status_not_recorded=latest_data.get("status_not_recorded", 0),
-                          action_none_yet=latest_data.get("action_none_yet", 0),
-                          action_data_corrected=latest_data.get("action_data_corrected", 0),
-                          action_other=latest_data.get("action_other", 0),
-                          action_not_recorded=latest_data.get("action_not_recorded", 0)))
+                          status_pending=status_pending,
+                          status_in_progress=status_in_progress,
+                          status_completed=status_completed,
+                          status_no_error_found=status_no_error_found,
+                          status_not_recorded=status_not_recorded,
+                          action_none_yet=action_none_yet,
+                          action_data_corrected=action_data_corrected,
+                          action_other=action_other,
+                          action_not_recorded=action_not_recorded))
 # sort by last masks desc
 unit_recs.sort(key=lambda u: -u["last"])
 
@@ -573,20 +581,22 @@ function showTip(e,txt){tip.textContent=txt;tip.style.opacity=1;tip.style.left=(
 function hideTip(){tip.style.opacity=0;}
 
 // ---- filtering ----
-function getPrimaryStatus(unit){
+function getPrimaryStatus(unit, dayIdx){
   const statusFields = ['status_pending','status_in_progress','status_completed','status_no_error_found','status_not_recorded'];
   let maxVal = -1, primary = 'all';
   for(const f of statusFields){
-    const v = unit[f] || 0;
+    const arr = unit[f]; if(!arr) continue;
+    const v = arr[dayIdx] || 0;
     if(v > maxVal){ maxVal = v; primary = f; }
   }
   return maxVal > 0 ? primary : 'all';
 }
-function getPrimaryAction(unit){
+function getPrimaryAction(unit, dayIdx){
   const actionFields = ['action_none_yet','action_data_corrected','action_other','action_not_recorded'];
   let maxVal = -1, primary = 'all';
   for(const f of actionFields){
-    const v = unit[f] || 0;
+    const arr = unit[f]; if(!arr) continue;
+    const v = arr[dayIdx] || 0;
     if(v > maxVal){ maxVal = v; primary = f; }
   }
   return maxVal > 0 ? primary : 'all';
@@ -595,8 +605,9 @@ function selUnits(){
   let u=DATA.units;
   if(state.dist!=='all') u=u.filter(x=>x.dist===state.dist);
   if(state.search){const s=state.search.toLowerCase();u=u.filter(x=>x.name.toLowerCase().includes(s)||x.dist.toLowerCase().includes(s));}
-  if(state.statusFilter!=='all') u=u.filter(x=>getPrimaryStatus(x)===state.statusFilter);
-  if(state.actionFilter!=='all') u=u.filter(x=>getPrimaryAction(x)===state.actionFilter);
+  const dayIdx = activeIdx().slice(-1)[0];
+  if(state.statusFilter!=='all') u=u.filter(x=>getPrimaryStatus(x, dayIdx)===state.statusFilter);
+  if(state.actionFilter!=='all') u=u.filter(x=>getPrimaryAction(x, dayIdx)===state.actionFilter);
   return u;
 }
 function activeIdx(){return state.days.slice().sort((a,b)=>a-b);}
@@ -797,10 +808,10 @@ function renderKPI(){
   const lastIdx=idx[idx.length-1];
   const present=u.filter(x=>x.masks[lastIdx]>0).length;
   const ratio=(c[c.length-1])?(Math.round(last/c[c.length-1]*100)/100):0;
-  // New KPIs from status/action
-  const completed=u.filter(x=>x.status_completed>0).length;
-  const pendingReview=u.filter(x=>x.status_pending>0||x.status_in_progress>0).length;
-  const actionReq=u.filter(x=>x.action_data_corrected>0||x.action_other>0).length;
+  // New KPIs from status/action (use latest day index)
+  const completed=u.filter(x=>x.status_completed[lastIdx]>0).length;
+  const pendingReview=u.filter(x=>x.status_pending[lastIdx]>0||x.status_in_progress[lastIdx]>0).length;
+  const actionReq=u.filter(x=>x.action_data_corrected[lastIdx]>0||x.action_other[lastIdx]>0).length;
   const box=document.getElementById('kpiBox');
   box.innerHTML=`
    <div class="kpi"><div class="kpi-top">${KI.masks}<span class="kmini">MASKS</span></div><div class="v a">${last}</div><div class="l">รวม${state.dist!=='all'?' · '+state.dist:''} · ${DATA.labels[lastIdx]}</div></div>
@@ -819,10 +830,10 @@ function renderProvince(){
   document.getElementById('provinceTitle').textContent=`${p.province_name} · รอบ ${PROVINCE.snapshot_label}`;
   document.getElementById('provinceSubtitle').textContent=PROVINCE.detail_aligned?`มีข้อมูลจังหวัดและรายละเอียด ${p.hospitals} หน่วยบริการถึงวันที่ ${PROVINCE.detail_latest_label} รอบ ${PROVINCE.detail_latest_time}`:'ภาพรวมระดับจังหวัด ใช้เสริมข้อมูลรายละเอียดหน่วยบริการของวันก่อนหน้า';
   document.getElementById('provinceStamp').textContent=`อันดับ ${p.rank}/${p.national_count} ประเทศ`;
-  // Calculate completion rate from facility data
-  const lastIdx=DATA.labels.length-1;
-  const unitsWithData=DATA.units.filter(u=>u.masks[lastIdx]>0);
-  const completedUnits=unitsWithData.filter(u=>u.status_completed>0).length;
+  // Calculate completion rate from facility data (use filtered units and latest selected day)
+  const lastIdx=activeIdx().slice(-1)[0];
+  const unitsWithData=selUnits().filter(u=>u.masks[lastIdx]>0);
+  const completedUnits=unitsWithData.filter(u=>u.status_completed[lastIdx]>0).length;
   const completionRate=unitsWithData.length?Math.round(completedUnits/unitsWithData.length*10000)/100:0;
   document.getElementById('provinceKpis').innerHTML=`
     <div class="prov-kpi"><span class="lab">CASES · เคส</span><b class="val">${fmt(p.masks)}</b><small>${signed(p.delta_masks)} เทียบ ${PROVINCE.baseline_label}</small></div>
@@ -873,8 +884,8 @@ function renderPareto(){
     cum+=o.v;
     // Add status badge info
     const unit=o.x;
-    const primaryStatus=getPrimaryStatus(unit);
-    const primaryAction=getPrimaryAction(unit);
+    const primaryStatus=getPrimaryStatus(unit, lastIdx);
+    const primaryAction=getPrimaryAction(unit, lastIdx);
     return {name:o.x.name,val:o.v,extra:`(${Math.round(100*cum/tot)}%)`,suffix:'',primaryStatus,primaryAction};
   });
   hbar(document.getElementById('paretoChart'),items);
@@ -884,7 +895,8 @@ function renderMom(){
   const items=u.map(x=>{const f=x.masks[idx[0]],l=x.masks[idx[idx.length-1]];
     return {x,f,l,d:l-f};}).filter(o=>o.d>0).sort((a,b)=>b.d-a.d)
     .map(o=>{
-      const hasCorrection=o.x.action_data_corrected>0;
+      const lastIdx=idx[idx.length-1];
+      const hasCorrection=o.x.action_data_corrected[lastIdx]>0;
       return {name:o.x.name,val:o.d,extra:`(${o.f}→${o.l})`,suffix:'',hasCorrection};
     });
   if(!items.length){document.getElementById('momChart').innerHTML='<div class="mut">ไม่มีหน่วยใดเพิ่มขึ้นในช่วงที่เลือก</div>';return;}
@@ -945,10 +957,10 @@ function renderUnitResponse(){
   if(state.responseMode==='answered'){
     const items=ranked.slice(0,8).map(m=>{
       const unit=m.unit;
-      const completed=unit.status_completed||0;
-      const inProgress=unit.status_in_progress||0;
-      const pendingStatus=unit.status_pending||0;
-      const otherStatus=(unit.status_no_error_found||0)+(unit.status_not_recorded||0);
+      const completed=unit.status_completed[latestIdx]||0;
+      const inProgress=unit.status_in_progress[latestIdx]||0;
+      const pendingStatus=unit.status_pending[latestIdx]||0;
+      const otherStatus=(unit.status_no_error_found[latestIdx]||0)+(unit.status_not_recorded[latestIdx]||0);
       const total=completed+inProgress+pendingStatus+otherStatus;
       return {
         name:m.unit.name,
