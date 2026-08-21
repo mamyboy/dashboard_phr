@@ -1178,6 +1178,12 @@ function actionLabel(key){
   const map={all:'—',action_none_yet:'ยังไม่ดำเนินการ',action_data_corrected:'แก้ไขข้อมูลแล้ว',action_other:'ดำเนินการอื่นๆ',action_not_recorded:'ยังไม่บันทึก'};
   return map[key]||key;
 }
+function repList(title, items, cssClass, emptyMsg){
+  if(!items || items.length===0){
+    return `<div class="rep-sec"><span class="rep-badge ${cssClass}">${title}</span><span class="rep-item rep-empty">${emptyMsg}</span></div>`;
+  }
+  return `<div class="rep-sec"><span class="rep-badge ${cssClass}">${title}</span>${items.map(it=>`<span class="rep-item">${it}</span>`).join('')}</div>`;
+}
 
 // ---- controls ----
 function buildControls(){
