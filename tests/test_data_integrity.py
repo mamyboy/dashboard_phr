@@ -260,14 +260,10 @@ class DataIntegrityTests(unittest.TestCase):
         Note: Dashboard combines status_no_error_found + status_not_recorded into 'status_other'.
         Known data quality issues in source CSV (status_unexpected_code not captured in dashboard):
         - Unit 10746 (โรงพยาบาลสตูล): status_sum=12 vs answered=11
-        - Unit 11403 (โรงพยาบาลควนกาหลง): status_sum=11 vs answered=10
-        - Unit 11406: status_sum=8 vs answered=3
         """
         last_idx = self.L - 1
         known_discrepancies = {
             "10746": {"stacked_sum": 12, "answered": 11},
-            "11403": {"stacked_sum": 11, "answered": 10},
-            "11406": {"stacked_sum": 8, "answered": 3},
         }
         for u in self.unit_recs:
             if u["ans"][last_idx] == 0:
