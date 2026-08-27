@@ -258,12 +258,10 @@ class DataIntegrityTests(unittest.TestCase):
     def test_unit_response_stacked_bars_sum_to_answered(self):
         """Stacked bar segments (completed+in_progress+pending+other) should sum to answered.
         Note: Dashboard combines status_no_error_found + status_not_recorded into 'status_other'.
-        Known data quality issues in source CSV (status_unexpected_code not captured in dashboard):
-        - Unit 10746 (โรงพยาบาลสตูล): status_sum=12 vs answered=11
+        No known discrepancies in current data.
         """
         last_idx = self.L - 1
         known_discrepancies = {
-            "10746": {"stacked_sum": 12, "answered": 11},
         }
         for u in self.unit_recs:
             if u["ans"][last_idx] == 0:
